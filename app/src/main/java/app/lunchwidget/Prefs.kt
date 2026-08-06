@@ -50,6 +50,8 @@ class Prefs(context: Context) {
                 allowance = o.getDouble("allowance"),
                 paceDelta = o.getDouble("paceDelta"),
                 onTrack = o.getBoolean("onTrack"),
+                allowanceToday = o.optDouble("allowanceToday", 0.0),
+                spentToday = o.optDouble("spentToday", 0.0),
             )
         }
         set(v) {
@@ -66,6 +68,8 @@ class Prefs(context: Context) {
                 .put("allowance", v.allowance)
                 .put("paceDelta", v.paceDelta)
                 .put("onTrack", v.onTrack)
+                .put("allowanceToday", v.allowanceToday)
+                .put("spentToday", v.spentToday)
             sp.edit().putString("snapshot", o.toString()).apply()
         }
 

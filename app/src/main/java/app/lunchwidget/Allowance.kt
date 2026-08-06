@@ -15,7 +15,14 @@ data class Snapshot(
     val allowance: Double,
     val paceDelta: Double,
     val onTrack: Boolean,
-)
+    // Today's limit: budget for today given spend before today, and how much of it is used.
+    val allowanceToday: Double = 0.0,
+    val spentToday: Double = 0.0,
+) {
+    val leftToday: Double get() = allowanceToday - spentToday
+    val progressToday: Double
+        get() = if (allowanceToday <= 0) 1.0 else spentToday / allowanceToday
+}
 
 // Pure port of dailyspend's compute.py — same math, testable on the JVM.
 object Allowance {
@@ -48,7 +55,14 @@ object Allowance {
         return ids
     }
 
-    fun compute(today: LocalDate, startDay: Int, totalBudget: Double, spent: Double): Snapshot {
+    fun compute(
+        today: LocalDate,
+        startDay: Int,
+        totalBudget: Double,
+        spentBefore: Double,
+        spentToday: Double = 0.0,
+    ): Snapshot {
+        val spent = spentBefore + spentToday
         val (start, end) = period(today, startDay)
         val remaining = totalBudget - spent
         val daysLeft = maxOf(1, (end.toEpochDay() - today.toEpochDay()).toInt())
@@ -56,6 +70,8 @@ object Allowance {
         val elapsed = (today.toEpochDay() - start.toEpochDay() + 1).toInt()
         val expected = totalBudget * elapsed.toDouble() / totalDays
         val pace = expected - spent
+        val daysInclToday = maxOf(1, (end.toEpochDay() - today.toEpochDay() + 1).toInt())
+        val allowanceToday = (totalBudget - spentBefore) / daysInclToday
         return Snapshot(
             periodStart = start,
             periodEnd = end,
@@ -66,6 +82,8 @@ object Allowance {
             allowance = remaining / daysLeft,
             paceDelta = pace,
             onTrack = pace >= 0,
+            allowanceToday = allowanceToday,
+            spentToday = spentToday,
         )
     }
 

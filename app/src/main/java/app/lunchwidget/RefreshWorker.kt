@@ -24,9 +24,10 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
             val trackedIds = Allowance.trackedIds(categories, prefs.trackedCategories)
             val budget = api.budgetTotal(start, end, trackedIds)
             val txns = api.transactions(start, end)
-            val spent = txns
-                .filter { it.categoryId in trackedIds && it.amount != 0.0 }
-                .sumOf { Math.abs(it.amount) }
+            val tracked = txns.filter { it.categoryId in trackedIds && it.amount != 0.0 }
+            val todayKey = today.toString()
+            val spentToday = tracked.filter { it.date == todayKey }.sumOf { Math.abs(it.amount) }
+            val spentBefore = tracked.filter { it.date != todayKey }.sumOf { Math.abs(it.amount) }
             // Category ids ordered by most recent use this period, for the quick-add list.
             prefs.recentCategoryIds = txns
                 .filter { it.categoryId != null }
@@ -34,7 +35,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
                 .mapValues { (_, ts) -> ts.maxOf { it.date } }
                 .entries.sortedByDescending { it.value }
                 .map { it.key }
-            prefs.snapshot = Allowance.compute(today, prefs.startDay, budget, spent)
+            prefs.snapshot = Allowance.compute(today, prefs.startDay, budget, spentBefore, spentToday)
             prefs.lastError = false
         } catch (e: Exception) {
             prefs.lastError = true

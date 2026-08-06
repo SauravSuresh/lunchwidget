@@ -2,18 +2,17 @@
 <resources>
     <string name="app_name">Lunch Widget</string>
     <string name="widget_description">Daily allowance + quick add</string>
-    <string name="setup">Tap to set up</string>
-    <string name="setup_hint">Add your Lunch Money token</string>
-    <string name="allowance_line">%s today</string>
-    <string name="on_track">on track ✓</string>
+    <string name="setup">SET UP</string>
+    <string name="setup_hint">TAP TO ADD YOUR LUNCH MONEY TOKEN</string>
+    <string name="on_track">on pace</string>
     <string name="over_pace">over pace</string>
     <string name="refresh_glyph">↻</string>
-    <string name="add_expense">Add expense</string>
+    <string name="add_expense">ADD EXPENSE</string>
     <string name="amount_hint">0</string>
     <string name="category_hint">Category — type to search</string>
     <string name="bad_category">Pick a category from the list</string>
     <string name="note_hint">Note (optional)</string>
-    <string name="save">Save</string>
+    <string name="save">SAVE</string>
     <string name="added">Added</string>
     <string name="bad_amount">Enter an amount</string>
     <string name="bad_day">1–31</string>

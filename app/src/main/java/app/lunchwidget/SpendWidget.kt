@@ -12,6 +12,7 @@ class SpendWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         for (id in ids) mgr.updateAppWidget(id, render(context))
+        RefreshWorker.refreshNow(context)
     }
 
     override fun onEnabled(context: Context) {
@@ -49,20 +50,17 @@ class SpendWidget : AppWidgetProvider() {
             }
 
             val sym = prefs.currency
-            val stale = if (prefs.lastError) " !" else ""
-            views.setTextViewText(
-                R.id.allowance,
-                context.getString(R.string.allowance_line, Allowance.fmt(snap.allowance, sym)) + stale
-            )
-            val pace = if (snap.onTrack) context.getString(R.string.on_track)
-            else context.getString(R.string.over_pace)
+            val overToday = snap.leftToday < 0
+            views.setTextViewText(R.id.allowance, Allowance.fmt(snap.leftToday, sym))
+            // Red is an interrupt, not decoration: only when today's limit is blown.
+            views.setTextColor(R.id.allowance, if (overToday) ACCENT else 0xFFFFFFFF.toInt())
+            views.setImageViewBitmap(R.id.bar, segmentsBitmap(snap.progressToday))
+            val pace = context.getString(if (snap.onTrack) R.string.on_track else R.string.over_pace)
+            val stale = if (prefs.lastError) " · STALE" else ""
             views.setTextViewText(
                 R.id.subline,
-                "${Allowance.fmt(snap.remaining, sym)} left · ${snap.daysLeft}d · $pace"
-            )
-            views.setTextColor(
-                R.id.subline,
-                if (snap.onTrack) 0xFF7BD98F.toInt() else 0xFFFF8A80.toInt()
+                ("${Allowance.fmt(snap.spentToday, sym)}/${Allowance.fmt(snap.allowanceToday, sym)} today · " +
+                    "${Allowance.fmt(snap.remaining, sym)} · ${snap.daysLeft}d · $pace$stale").uppercase()
             )
             views.setOnClickPendingIntent(
                 R.id.widget_root,
@@ -77,6 +75,42 @@ class SpendWidget : AppWidgetProvider() {
                 )
             )
             return views
+        }
+
+        private const val ACCENT = 0xFFD71921.toInt()
+
+        // Nothing-style segmented bar: discrete square blocks, white = spent within
+        // today's allowance, red = overflow past the limit, grey = still available.
+        private fun segmentsBitmap(progress: Double): android.graphics.Bitmap {
+            val n = 24
+            val segW = 20
+            val gap = 5
+            val h = 24
+            val bmp = android.graphics.Bitmap.createBitmap(
+                n * segW + (n - 1) * gap, h, android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bmp)
+            val paint = android.graphics.Paint()
+            val p = maxOf(0.0, progress)
+            val filled: Int
+            val red: Int
+            if (p <= 1.0) {
+                filled = Math.round(n * p).toInt()
+                red = 0
+            } else {
+                filled = n
+                red = n - Math.max(1, Math.round(n / p).toInt())
+            }
+            for (i in 0 until n) {
+                paint.color = when {
+                    i >= filled -> 0xFF262626.toInt()
+                    i >= n - red -> ACCENT
+                    else -> 0xFFFFFFFF.toInt()
+                }
+                val x = i * (segW + gap).toFloat()
+                canvas.drawRect(x, 0f, x + segW, h.toFloat(), paint)
+            }
+            return bmp
         }
 
         private fun activityIntent(context: Context, cls: Class<*>, req: Int): PendingIntent =

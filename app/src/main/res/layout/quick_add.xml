@@ -10,43 +10,47 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
         android:text="@string/add_expense"
-        android:textColor="#EDEDED"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textColor="#8F8F8F"
+        android:textSize="11sp" />
 
     <EditText
         android:id="@+id/amount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:background="@null"
+        android:fontFamily="@font/doto"
+        android:textFontWeight="700"
         android:hint="@string/amount_hint"
         android:inputType="numberDecimal"
         android:textColor="#FFFFFF"
-        android:textColorHint="#555555"
-        android:textSize="40sp"
-        android:textStyle="bold" />
+        android:textColorHint="#3A3A3A"
+        android:textCursorDrawable="@null"
+        android:textSize="48sp" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#333333" />
+        android:layout_marginTop="4dp"
+        android:background="#2A2A2A" />
 
     <AutoCompleteTextView
         android:id="@+id/category"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
         android:background="@drawable/field_bg"
         android:completionThreshold="1"
         android:hint="@string/category_hint"
         android:inputType="text"
-        android:padding="12dp"
-        android:popupBackground="#2A2A2C"
+        android:padding="14dp"
+        android:popupBackground="#141414"
         android:textColor="#FFFFFF"
-        android:textColorHint="#777777"
-        android:textSize="16sp" />
+        android:textColorHint="#5A5A5A"
+        android:textSize="15sp" />
 
     <EditText
         android:id="@+id/note"
@@ -56,19 +60,20 @@
         android:background="@drawable/field_bg"
         android:hint="@string/note_hint"
         android:inputType="text"
-        android:padding="12dp"
+        android:padding="14dp"
         android:textColor="#FFFFFF"
-        android:textColorHint="#777777"
-        android:textSize="16sp" />
+        android:textColorHint="#5A5A5A"
+        android:textSize="15sp" />
 
     <Button
         android:id="@+id/save"
         android:layout_width="match_parent"
         android:layout_height="52dp"
-        android:layout_marginTop="18dp"
-        android:background="@drawable/btn_accent"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/btn_primary"
+        android:fontFamily="@font/space_mono_bold"
+        android:letterSpacing="0.08"
         android:text="@string/save"
-        android:textColor="#0A2416"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textColor="#000000"
+        android:textSize="14sp" />
 </LinearLayout>

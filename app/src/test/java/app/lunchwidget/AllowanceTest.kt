@@ -64,6 +64,23 @@ class AllowanceTest {
     }
 
     @Test
+    fun todayAllowanceIgnoresTodaySpend() {
+        // Aug 6: 23 days incl today. Before today: 8000 spent of 31000 -> 1000/day.
+        val snap = Allowance.compute(LocalDate.of(2026, 8, 6), 29, 31000.0, 8000.0, 400.0)
+        assertEquals(1000.0, snap.allowanceToday, 0.01)
+        assertEquals(600.0, snap.leftToday, 0.01)
+        assertEquals(0.4, snap.progressToday, 0.001)
+        assertEquals(8400.0, snap.spent, 0.01)
+    }
+
+    @Test
+    fun overspendTodayGoesNegative() {
+        val snap = Allowance.compute(LocalDate.of(2026, 8, 6), 29, 31000.0, 8000.0, 1500.0)
+        assertEquals(-500.0, snap.leftToday, 0.01)
+        assertEquals(1.5, snap.progressToday, 0.001)
+    }
+
+    @Test
     fun trackedGroupExpandsToChildren() {
         val cats = listOf(
             Category(1, "Living Expenses", null, true),
