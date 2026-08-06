@@ -1,12 +1,57 @@
 # lunchwidget
 
-Android home-screen widget for [Lunch Money](https://lunchmoney.app): shows
-today's adaptive daily allowance (same math as
-[dailyspend](https://github.com/SauravSuresh/dailyspend), computed on-device)
-and quick-adds transactions in two taps.
+An Android home-screen widget for [Lunch Money](https://lunchmoney.app) that
+answers one question at a glance — **how much can I still spend today?** — and
+lets you log an expense in two taps without opening an app.
 
-**Widget:** `₹362 today` · `₹7,964 left · 22d · on track ✓`
-Tap → quick-add (amount + category + note). `↻` → refresh.
+Built as a companion to [dailyspend](https://github.com/SauravSuresh/dailyspend),
+which computes the same number server-side and drops it into Todoist every
+morning. This widget computes it on-device, live.
+
+## The philosophy: a daily number, not a monthly one
+
+Lunch Money budgets monthly. But nobody overspends a month at a time — you
+overspend one lunch, one cab, one impulse buy at a time. A monthly budget is
+too big and too far away to change any single decision.
+
+So the widget collapses the month into **one adaptive daily allowance**:
+
+```
+today's allowance = (budget − spent before today) ÷ days left in period
+```
+
+The number self-corrects. Overspend today and tomorrow's allowance shrinks;
+underspend and it grows. There's no streak to break, no guilt mechanic —
+just an honest number that absorbs yesterday and re-plans the rest of the
+period every morning.
+
+The widget shows what's left of *today's* share, with a segmented bar that
+fills left to right as you spend it. Glanceable pacing: white means go,
+amber means you've used 70%, red means today is blown (and tomorrow will
+quietly shrink to compensate).
+
+## Quick add, because friction kills tracking
+
+The other half of the loop: an expense you don't log is an expense the
+number doesn't know about. Opening an app, waiting for sync, filling a form —
+that's enough friction to skip logging the ₹40 chai, and enough skipped
+chais makes the allowance fiction.
+
+So the whole widget is a button. Tap → amount → category (type-to-search,
+sorted by what you've used recently) → save. The transaction posts to Lunch
+Money, the allowance recomputes, and the bar moves — immediately. Logging an
+expense costs about four seconds, which is cheap enough to actually do.
+
+## Nothing style
+
+I use a Nothing phone, so the widget dresses like it belongs there: OLED
+black, dot-matrix hero number ([Doto](https://fonts.google.com/specimen/Doto),
+round dots — the open cousin of NDot), ALL-CAPS Space Mono labels, and a
+discrete segmented bar instead of a smooth progress fill. Monochrome
+everywhere; red (#D71921) appears only as a signal, when today's limit is
+actually exceeded. Design follows
+[nothing-design-skill](https://github.com/dominikmartn/nothing-design-skill)
+and [vibe-nothing-ui-design](https://github.com/wangbh030722/vibe-nothing-ui-design).
 
 ## Install
 
@@ -15,28 +60,29 @@ Tap → quick-add (amount + category + note). `↻` → refresh.
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Open **Lunch Widget** app → paste your Lunch Money API token
-(lunchmoney.app → Developers) → Save. Long-press home screen → widgets →
-Lunch Widget.
+Open **Lunch Widget** → paste your Lunch Money API token (lunchmoney.app →
+Developers) → Save → add the widget to your home screen.
+
+No Play Store, no server, no analytics. One API token, stored locally,
+talking straight to `dev.lunchmoney.app`. Zero third-party runtime
+dependencies beyond AndroidX WorkManager.
 
 ## Settings
 
 - **Tracked categories** — comma-separated, default `Living Expenses`.
-  A group category includes all its children.
-- **Period start day** — default `29` (29th–28th cycle); `1` = calendar month.
+  A category group includes all its children.
+- **Period start day** — default `29` (salary-cycle months, 29th–28th);
+  `1` for calendar months.
 - **Currency symbol** — display only, default `₹`.
 
 ## How it works
 
-Every 4 hours (and after each quick-add) a WorkManager job pulls categories,
-budget, and period transactions from `dev.lunchmoney.app/v1`, computes
-`allowance = (budget − spent) ÷ days left`, caches the snapshot, and redraws
-the widget. Works offline from the last snapshot; `!` marks stale data.
-
-Quick-adds post as uncleared transactions dated today.
-
-## Test
+Every 4 hours — and instantly after each quick-add or a tap on ↻ — a
+WorkManager job pulls categories, budgets, and the period's transactions,
+recomputes the allowance, caches a snapshot, and redraws the widget. Offline
+it renders the last snapshot with a STALE marker. Quick-adds post as
+uncleared transactions dated today.
 
 ```sh
-./gradlew test   # allowance math unit tests
+./gradlew test   # unit tests for the allowance math
 ```
