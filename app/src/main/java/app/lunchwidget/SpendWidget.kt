@@ -74,7 +74,7 @@ class SpendWidget : AppWidgetProvider() {
             }
             views.setImageViewBitmap(
                 R.id.allowance,
-                heroBitmap(context, Allowance.fmt(snap.leftToday, sym), stateColor)
+                heroBitmap(context, Allowance.fmt(snap.leftToday, ""), stateColor)
             )
             views.setImageViewBitmap(R.id.bar, segmentsBitmap(p))
             val pace = context.getString(if (snap.onTrack) R.string.on_track else R.string.over_pace)
@@ -132,72 +132,19 @@ class SpendWidget : AppWidgetProvider() {
             return bmp
         }
 
-        // Hero line as a bitmap: Doto (round dots) for everything it covers, and a
-        // hand-stamped dot-matrix ₹ since Doto has no rupee glyph.
+        // Hero line as a bitmap so Doto renders with round dots at weight 700.
         private fun heroBitmap(context: Context, text: String, color: Int): Bitmap {
-            val size = 120f
-            val doto = context.resources.getFont(R.font.doto)
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                typeface = doto
+                typeface = context.resources.getFont(R.font.doto)
                 fontVariationSettings = "'ROND' 100, 'wght' 700"
-                textSize = size
+                textSize = 120f
                 this.color = color
             }
-            val rupeeH = size * 0.68f
-            val rupeeCell = rupeeH / RUPEE_ROWS
-            val rupeeW = rupeeCell * RUPEE_COLS
-            var w = 8f
-            for (ch in text) {
-                w += if (ch == '₹') rupeeW + size * 0.08f else paint.measureText(ch.toString())
-            }
             val fm = paint.fontMetrics
-            val hgt = -fm.ascent + fm.descent
-            val bmp = Bitmap.createBitmap(w.toInt() + 8, hgt.toInt() + 4, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bmp)
-            val baseline = -fm.ascent + 2f
-            var x = 4f
-            for (ch in text) {
-                if (ch == '₹') {
-                    drawDottedRupee(canvas, x, baseline, rupeeCell, paint)
-                    x += rupeeW + size * 0.08f
-                } else {
-                    canvas.drawText(ch.toString(), x, baseline, paint)
-                    x += paint.measureText(ch.toString())
-                }
-            }
+            val w = paint.measureText(text).toInt() + 8
+            val bmp = Bitmap.createBitmap(w, (-fm.ascent + fm.descent).toInt() + 4, Bitmap.Config.ARGB_8888)
+            Canvas(bmp).drawText(text, 4f, -fm.ascent + 2f, paint)
             return bmp
-        }
-
-        // ₹ on a 7x9 grid of full circles, matching Doto's round-dot voice.
-        private const val RUPEE_COLS = 7
-        private const val RUPEE_ROWS = 9
-        private val RUPEE_GRID = arrayOf(
-            "1111111",
-            "0000011",
-            "1111111",
-            "0000011",
-            "0000110",
-            "0001100",
-            "0011000",
-            "0110000",
-            "1100000",
-        )
-
-        private fun drawDottedRupee(canvas: Canvas, x: Float, baseline: Float, cell: Float, paint: Paint) {
-            val top = baseline - cell * RUPEE_ROWS
-            val r = cell * 0.42f
-            for (row in 0 until RUPEE_ROWS) {
-                for (col in 0 until RUPEE_COLS) {
-                    if (RUPEE_GRID[row][col] == '1') {
-                        canvas.drawCircle(
-                            x + (col + 0.5f) * cell,
-                            top + (row + 0.5f) * cell,
-                            r,
-                            paint
-                        )
-                    }
-                }
-            }
         }
 
         private fun activityIntent(context: Context, cls: Class<*>, req: Int): PendingIntent =
