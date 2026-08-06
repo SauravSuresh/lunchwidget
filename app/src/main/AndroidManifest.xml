@@ -18,9 +18,10 @@
 
         <activity
             android:name=".QuickAddActivity"
-            android:exported="false"
+            android:exported="true"
             android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.DeviceDefault.Dialog" />
+            android:theme="@style/QuickAddTheme"
+            android:windowSoftInputMode="adjustResize" />
 
         <receiver
             android:name=".SpendWidget"

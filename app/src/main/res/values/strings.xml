@@ -8,7 +8,10 @@
     <string name="on_track">on track ✓</string>
     <string name="over_pace">over pace</string>
     <string name="refresh_glyph">↻</string>
-    <string name="amount_hint">Amount</string>
+    <string name="add_expense">Add expense</string>
+    <string name="amount_hint">0</string>
+    <string name="category_hint">Category — type to search</string>
+    <string name="bad_category">Pick a category from the list</string>
     <string name="note_hint">Note (optional)</string>
     <string name="save">Save</string>
     <string name="added">Added</string>

@@ -23,7 +23,17 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
             val (start, end) = Allowance.period(today, prefs.startDay)
             val trackedIds = Allowance.trackedIds(categories, prefs.trackedCategories)
             val budget = api.budgetTotal(start, end, trackedIds)
-            val spent = api.spent(start, end, trackedIds)
+            val txns = api.transactions(start, end)
+            val spent = txns
+                .filter { it.categoryId in trackedIds && it.amount != 0.0 }
+                .sumOf { Math.abs(it.amount) }
+            // Category ids ordered by most recent use this period, for the quick-add list.
+            prefs.recentCategoryIds = txns
+                .filter { it.categoryId != null }
+                .groupBy { it.categoryId!! }
+                .mapValues { (_, ts) -> ts.maxOf { it.date } }
+                .entries.sortedByDescending { it.value }
+                .map { it.key }
             prefs.snapshot = Allowance.compute(today, prefs.startDay, budget, spent)
             prefs.lastError = false
         } catch (e: Exception) {

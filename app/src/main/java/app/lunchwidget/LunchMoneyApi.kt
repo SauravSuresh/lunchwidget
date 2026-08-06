@@ -58,8 +58,8 @@ class LunchMoneyApi(private val token: String) {
         return total
     }
 
-    fun spent(start: LocalDate, end: LocalDate, trackedIds: Set<Long>): Double {
-        var spent = 0.0
+    fun transactions(start: LocalDate, end: LocalDate): List<Txn> {
+        val out = mutableListOf<Txn>()
         var offset = 0
         val limit = 500
         while (true) {
@@ -70,15 +70,19 @@ class LunchMoneyApi(private val token: String) {
             val batch = JSONObject(json).getJSONArray("transactions")
             for (i in 0 until batch.length()) {
                 val t = batch.getJSONObject(i)
-                if (t.isNull("category_id")) continue
-                if (t.getLong("category_id") !in trackedIds) continue
                 val amt = t.optDouble("amount")
-                if (!amt.isNaN() && amt != 0.0) spent += Math.abs(amt)
+                out.add(
+                    Txn(
+                        categoryId = if (t.isNull("category_id")) null else t.getLong("category_id"),
+                        amount = if (amt.isNaN()) 0.0 else amt,
+                        date = t.optString("date"),
+                    )
+                )
             }
             if (batch.length() < limit) break
             offset += limit
         }
-        return spent
+        return out
     }
 
     fun insertTransaction(date: LocalDate, amount: Double, categoryId: Long, note: String?) {
@@ -94,3 +98,5 @@ class LunchMoneyApi(private val token: String) {
 }
 
 class ApiException(message: String) : RuntimeException(message)
+
+data class Txn(val categoryId: Long?, val amount: Double, val date: String)

@@ -60,6 +60,10 @@ class SpendWidget : AppWidgetProvider() {
                 R.id.subline,
                 "${Allowance.fmt(snap.remaining, sym)} left · ${snap.daysLeft}d · $pace"
             )
+            views.setTextColor(
+                R.id.subline,
+                if (snap.onTrack) 0xFF7BD98F.toInt() else 0xFFFF8A80.toInt()
+            )
             views.setOnClickPendingIntent(
                 R.id.widget_root,
                 activityIntent(context, QuickAddActivity::class.java, 1)

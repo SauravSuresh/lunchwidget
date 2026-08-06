@@ -27,6 +27,11 @@ class Prefs(context: Context) {
         get() = sp.getString("currency", "₹") ?: "₹"
         set(v) = sp.edit().putString("currency", v).apply()
 
+    var recentCategoryIds: List<Long>
+        get() = (sp.getString("recent_cats", "") ?: "")
+            .split(",").mapNotNull { it.toLongOrNull() }
+        set(v) = sp.edit().putString("recent_cats", v.joinToString(",")).apply()
+
     var lastError: Boolean
         get() = sp.getBoolean("last_error", false)
         set(v) = sp.edit().putBoolean("last_error", v).apply()
