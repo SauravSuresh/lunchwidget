@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lunch Widget</string>
+    <string name="widget_description">Daily allowance + quick add</string>
+    <string name="setup">Tap to set up</string>
+    <string name="setup_hint">Add your Lunch Money token</string>
+    <string name="allowance_line">%s today</string>
+    <string name="on_track">on track ✓</string>
+    <string name="over_pace">over pace</string>
+    <string name="refresh_glyph">↻</string>
+    <string name="amount_hint">Amount</string>
+    <string name="note_hint">Note (optional)</string>
+    <string name="save">Save</string>
+    <string name="added">Added</string>
+    <string name="bad_amount">Enter an amount</string>
+    <string name="bad_day">1–31</string>
+    <string name="saved">Saved</string>
+    <string name="no_categories">Categories not loaded yet — open settings and save first</string>
+    <string name="token_label">Lunch Money API token</string>
+    <string name="token_hint">from lunchmoney.app → Developers</string>
+    <string name="tracked_label">Tracked categories (comma-separated)</string>
+    <string name="start_day_label">Budget period start day (1 = calendar month)</string>
+    <string name="currency_label">Currency symbol</string>
+</resources>
