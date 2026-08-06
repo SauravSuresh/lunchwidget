@@ -13,17 +13,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <TextView
+        <ImageView
             android:id="@+id/allowance"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
             android:layout_weight="1"
-            android:fontFamily="@font/doto"
-            android:textFontWeight="700"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:textColor="#FFFFFF"
-            android:textSize="34sp" />
+            android:scaleType="fitStart" />
 
         <TextView
             android:id="@+id/refresh"

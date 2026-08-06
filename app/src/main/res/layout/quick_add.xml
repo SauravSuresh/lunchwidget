@@ -24,6 +24,7 @@
         android:background="@null"
         android:fontFamily="@font/doto"
         android:textFontWeight="700"
+        android:fontVariationSettings="&apos;ROND&apos; 100"
         android:hint="@string/amount_hint"
         android:inputType="numberDecimal"
         android:textColor="#FFFFFF"
