@@ -10,7 +10,8 @@ android {
     defaultConfig {
         applicationId = "app.lunchwidget"
         minSdk = 26
-        targetSdk = 35
+        // ponytail: targetSdk 34 opts out of Android 15 forced edge-to-edge; bump + handle insets if ever needed
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
