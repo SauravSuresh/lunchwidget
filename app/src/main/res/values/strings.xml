@@ -53,4 +53,13 @@
     <string name="income_category_hint">Income category — type to search</string>
     <string name="save_income">SAVE INCOME</string>
     <string name="no_income_categories">No income categories in Lunch Money — add one there first</string>
+    <string name="itemize">ITEMIZE</string>
+    <string name="itemize_title">ITEMIZE · BILL %s</string>
+    <string name="add_item">+ ADD ITEM</string>
+    <string name="item_hint">item</string>
+    <string name="itemize_done">DONE</string>
+    <string name="items_vs_bill">ITEMS %1$s · BILL %2$s</string>
+    <string name="tax_fees">" · +%s%% TAX &amp; FEES"</string>
+    <string name="discount">" · −%s%% DISCOUNT"</string>
+    <string name="assign_all">ASSIGN EVERY ITEM TO SOMEONE</string>
 </resources>

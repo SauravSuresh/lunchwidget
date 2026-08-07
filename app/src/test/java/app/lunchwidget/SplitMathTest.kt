@@ -99,6 +99,54 @@ class SplitMathTest {
     }
 
     @Test
+    fun itemizeScalesTaxProportionally() {
+        // Items sum 240, bill 270 → 12.5% fees prorated: exactly GST-style.
+        val items = listOf(
+            BillItem(160.0, "biryani", setOf("")),
+            BillItem(80.0, "dosa", setOf("casey")),
+        )
+        val shares = SplitMath.itemize(270.0, items, "")
+        assertEquals(180.0, shares.getValue(""), 0.0)
+        assertEquals(90.0, shares.getValue("casey"), 0.0)
+    }
+
+    @Test
+    fun itemizeSharedItemSplitsAmongAssignees() {
+        val items = listOf(
+            BillItem(90.0, "starter", setOf("", "casey", "devon")),
+            BillItem(100.0, "mains", setOf("casey")),
+        )
+        val shares = SplitMath.itemize(190.0, items, "")
+        assertEquals(30.0, shares.getValue(""), 0.0)
+        assertEquals(130.0, shares.getValue("casey"), 0.0)
+        assertEquals(30.0, shares.getValue("devon"), 0.0)
+    }
+
+    @Test
+    fun itemizeDiscountScalesDownAndRemainderToMe() {
+        // Bill 100 vs items 150 (coupon): scale 2/3; odd thirds round, diff lands on me.
+        val items = listOf(
+            BillItem(50.0, "", setOf("")),
+            BillItem(50.0, "", setOf("casey")),
+            BillItem(50.0, "", setOf("devon")),
+        )
+        val shares = SplitMath.itemize(100.0, items, "")
+        assertEquals(100.0, shares.values.sum(), 1e-9)
+        assertEquals(33.33, shares.getValue("casey"), 0.0)
+        assertEquals(33.33, shares.getValue("devon"), 0.0)
+        assertEquals(33.34, shares.getValue(""), 0.0)
+    }
+
+    @Test
+    fun itemizeIgnoresUnassignedAndEmpty() {
+        assertEquals(emptyMap<String, Double>(), SplitMath.itemize(100.0, emptyList(), ""))
+        assertEquals(
+            emptyMap<String, Double>(),
+            SplitMath.itemize(100.0, listOf(BillItem(50.0, "", emptySet())), "")
+        )
+    }
+
+    @Test
     fun pendingJsonRoundTrips() {
         val pending = listOf(
             PendingPerson("alex", 533.33, listOf(OwedItem("2026-07-19", "Movie", 533.33))),

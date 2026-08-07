@@ -164,7 +164,7 @@ Per the [query-mechanics research](https://github.com/SauravSuresh/lunchwidget/i
 
 ## 10. Not in v1
 
-- Itemized receipt split (easychecksplitter-style) — confirmed for v2.
+- ~~Itemized receipt split (easychecksplitter-style)~~ — shipped as v2, §12.
 - Standalone owed-overview screen; transaction groups; native LM splits; per-person
   asset accounts; contacts binding beyond display names.
 
@@ -176,3 +176,25 @@ Per the [query-mechanics research](https://github.com/SauravSuresh/lunchwidget/i
    `AllowanceTest`).
 4. Income/repayment flow (§6).
 5. Settings row + README update.
+
+## 12. v2: itemized receipt split
+
+An **ITEMIZE** button in the split receipt step (beside EQUAL, needs ≥1 person)
+opens the items screen:
+
+- Rows of *amount + optional label*, each with assignee chips (YOU + the split's
+  people). Multi-assign shares an item equally among its assignees. Unassigned
+  items block DONE.
+- Footer shows `ITEMS <Σitems> · BILL <total>` plus the derived adjustment:
+  `+x% TAX & FEES` when the bill exceeds the items, `−x% DISCOUNT` when a
+  coupon shrinks it.
+- **Math** (pure, in `SplitMath.itemize`): per-person subtotal (shared items
+  divided by assignee count) scaled by `bill ÷ Σitems`, rounded to 2dp,
+  remainder to you. Scaling makes GST/service-charge proration and discounts
+  the same operation — CGST/SGST is a flat percentage of the food subtotal, so
+  proportional scaling *is* the tax rule; no detection heuristics.
+- DONE writes the computed shares back to the receipt rows **locked**; normal
+  lock-edit still works, EQUAL wipes back to equal mode. Items persist while
+  the dialog lives, so re-entering ITEMIZE resumes them.
+- Nothing downstream changes: Lunch Money still receives only the final
+  share/owed transactions (§5).

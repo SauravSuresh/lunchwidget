@@ -15,6 +15,9 @@ data class Share(
 // One unsettled owed transaction, as shown on the settle screen.
 data class OwedItem(val date: String, val payee: String, val amount: Double)
 
+// One receipt line in the itemized split; assignees are participant slugs.
+data class BillItem(val amount: Double, val label: String, val assignees: Set<String>)
+
 // How much of an item a poured amount covers.
 data class Poured(val item: OwedItem, val take: Double) {
     val frac: Double get() = if (item.amount <= 0) 0.0 else take / item.amount
@@ -80,6 +83,33 @@ object SplitMath {
                     items = remaining,
                 )
             }
+    }
+
+    /**
+     * Itemized split: share each item equally among its assignees, then scale every
+     * subtotal by bill ÷ Σitems — which is exactly how GST/service charge (bill >
+     * items) and coupons (bill < items) apply — round to 2dp, remainder to [meKey]
+     * (or the first sharer if meKey has no share). Keys are participant slugs.
+     */
+    fun itemize(bill: Double, items: List<BillItem>, meKey: String): Map<String, Double> {
+        val itemsSum = items.sumOf { it.amount }
+        if (itemsSum <= 0) return emptyMap()
+        val raw = LinkedHashMap<String, Double>()
+        for (i in items) {
+            if (i.assignees.isEmpty()) continue
+            val cut = i.amount / i.assignees.size
+            for (a in i.assignees) raw[a] = (raw[a] ?: 0.0) + cut
+        }
+        if (raw.isEmpty()) return emptyMap()
+        val scale = bill / itemsSum
+        val out = LinkedHashMap<String, Double>()
+        raw.forEach { (k, v) -> out[k] = round2(v * scale) }
+        val diff = round2(bill - out.values.sum())
+        if (diff != 0.0) {
+            val k = if (meKey in out) meKey else out.keys.first()
+            out[k] = round2(out.getValue(k) + diff)
+        }
+        return out
     }
 
     fun pendingToJson(pending: List<PendingPerson>): String {

@@ -21,7 +21,14 @@ import kotlin.concurrent.thread
 
 class QuickAddActivity : Activity() {
 
-    private enum class Screen { ENTRY, SPLIT, PERSONS, SETTLE, INCOME }
+    private enum class Screen { ENTRY, SPLIT, ITEMIZE, PERSONS, SETTLE, INCOME }
+
+    // One receipt line being edited on the itemize screen.
+    private class UiItem(
+        var amount: Double? = null,
+        var label: String = "",
+        val assignees: MutableSet<String> = mutableSetOf(),
+    )
 
     private lateinit var prefs: Prefs
     private var screen = Screen.ENTRY
@@ -39,6 +46,9 @@ class QuickAddActivity : Activity() {
     private var includeMe = true
     private var splitTotal = 0.0
     private var splitCategoryId = 0L
+
+    // Itemize state, persists while the dialog lives so reopening resumes it.
+    private val billItems = mutableListOf<UiItem>()
 
     // Settle state.
     private var settlePerson: PendingPerson? = null
@@ -59,6 +69,7 @@ class QuickAddActivity : Activity() {
     override fun onBackPressed() {
         when (screen) {
             Screen.SPLIT, Screen.PERSONS, Screen.INCOME -> showEntry()
+            Screen.ITEMIZE -> showSplit()
             Screen.SETTLE -> showPersons()
             Screen.ENTRY -> @Suppress("DEPRECATION") super.onBackPressed()
         }
@@ -260,6 +271,7 @@ class QuickAddActivity : Activity() {
             renderSplit()
         }
 
+        findViewById<TextView>(R.id.itemize).setOnClickListener { showItemize() }
         findViewById<Button>(R.id.save_split).setOnClickListener { saveSplit() }
         renderSplit()
     }
@@ -275,6 +287,8 @@ class QuickAddActivity : Activity() {
         val meChip = findViewById<TextView>(R.id.me_chip)
         meChip.setBackgroundResource(if (includeMe) R.drawable.chip_on else R.drawable.chip)
         meChip.setTextColor(if (includeMe) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
+        findViewById<TextView>(R.id.itemize).visibility =
+            if (friends.isEmpty()) View.GONE else View.VISIBLE
 
         val bar = findViewById<LinearLayout>(R.id.prop_bar)
         bar.removeAllViews()
@@ -377,6 +391,117 @@ class QuickAddActivity : Activity() {
                 }
             }
         }
+    }
+
+    // ---------------------------------------------------------------- itemize
+
+    private fun showItemize() {
+        screen = Screen.ITEMIZE
+        setContentView(R.layout.itemize)
+        findViewById<TextView>(R.id.itemize_title).text =
+            getString(R.string.itemize_title, fmtA(splitTotal))
+        if (billItems.isEmpty()) billItems.add(UiItem())
+        findViewById<TextView>(R.id.add_item).setOnClickListener {
+            billItems.add(UiItem())
+            renderItemize()
+        }
+        findViewById<Button>(R.id.itemize_done).setOnClickListener { applyItemize() }
+        renderItemize()
+    }
+
+    private fun itemizeParticipants(): List<Share> =
+        if (includeMe) listOf(me) + friends else friends.toList()
+
+    // Rows with an amount; assignees narrowed to people still in the split.
+    private fun validBillItems(): List<BillItem> {
+        val slugs = itemizeParticipants().map { it.slug }.toSet()
+        return billItems
+            .filter { (it.amount ?: 0.0) > 0 }
+            .map { BillItem(it.amount!!, it.label, it.assignees intersect slugs) }
+    }
+
+    private fun renderItemize() {
+        if (screen != Screen.ITEMIZE) return
+        val container = findViewById<LinearLayout>(R.id.bill_items)
+        container.removeAllViews()
+        for (item in billItems) {
+            val row = layoutInflater.inflate(R.layout.row_bill_item, container, false)
+            val amt = row.findViewById<EditText>(R.id.bill_amt)
+            if (item.amount != null) amt.setText(fmtA(item.amount!!))
+            amt.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    item.amount = s.toString().toDoubleOrNull()
+                    updateItemizeFooter()
+                }
+            })
+            val label = row.findViewById<EditText>(R.id.bill_label)
+            label.setText(item.label)
+            label.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun afterTextChanged(s: Editable?) { item.label = s.toString() }
+            })
+            row.findViewById<TextView>(R.id.bill_remove).setOnClickListener {
+                billItems.remove(item)
+                renderItemize()
+            }
+            val chips = row.findViewById<LinearLayout>(R.id.bill_chips)
+            for (p in itemizeParticipants()) {
+                val chip = TextView(this)
+                val on = p.slug in item.assignees
+                chip.text = if (p.isMe) "YOU" else p.display.uppercase(Locale.US)
+                chip.setTextColor(if (on) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
+                chip.setBackgroundResource(if (on) R.drawable.chip_on else R.drawable.chip)
+                chip.textSize = 11f
+                chip.letterSpacing = 0.08f
+                chip.typeface = resources.getFont(R.font.space_mono)
+                val pad = (10 * resources.displayMetrics.density).toInt()
+                chip.setPadding(pad + 4, pad / 2 + 2, pad + 4, pad / 2 + 2)
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.marginEnd = (8 * resources.displayMetrics.density).toInt()
+                chip.setOnClickListener {
+                    if (p.slug in item.assignees) item.assignees.remove(p.slug)
+                    else item.assignees.add(p.slug)
+                    renderItemize()
+                }
+                chips.addView(chip, lp)
+            }
+            container.addView(row)
+        }
+        updateItemizeFooter()
+    }
+
+    private fun updateItemizeFooter() {
+        if (screen != Screen.ITEMIZE) return
+        val valid = validBillItems()
+        val itemsSum = SplitMath.round2(valid.sumOf { it.amount })
+        val allAssigned = valid.isNotEmpty() && valid.all { it.assignees.isNotEmpty() }
+        val footer = findViewById<TextView>(R.id.items_footer)
+        var text = getString(R.string.items_vs_bill, fmtA(itemsSum), fmtA(splitTotal))
+        if (itemsSum > 0) {
+            val pct = (splitTotal - itemsSum) / itemsSum * 100
+            val pctStr = String.format(Locale.US, if (pct % 1.0 == 0.0) "%.0f" else "%.1f", Math.abs(pct))
+            if (pct >= 0.05) text += getString(R.string.tax_fees, pctStr)
+            else if (pct <= -0.05) text += getString(R.string.discount, pctStr)
+        }
+        if (!allAssigned) text += "\n" + getString(R.string.assign_all)
+        footer.text = text
+        findViewById<Button>(R.id.itemize_done).isEnabled = allAssigned
+    }
+
+    private fun applyItemize() {
+        val meKey = if (includeMe) me.slug else friends.firstOrNull()?.slug ?: return
+        val shares = SplitMath.itemize(splitTotal, validBillItems(), meKey)
+        if (shares.isEmpty()) return
+        for (r in itemizeParticipants()) {
+            r.amount = shares[r.slug] ?: 0.0
+            r.locked = true
+        }
+        showSplit()
     }
 
     // ---------------------------------------------------------------- repayment
