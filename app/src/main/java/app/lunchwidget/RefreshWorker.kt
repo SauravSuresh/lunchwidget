@@ -40,8 +40,10 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
             val reimbId = prefs.reimbCategoryId
             val owedSince = prefs.owedSince
             if (reimbId != 0L && owedSince != null) {
+                // end_date must be strictly after start_date (v1 rejects same-day),
+                // and owed_since == today on the day the feature is first used.
                 prefs.pending = SplitMath.groupPending(
-                    api.categoryTransactions(reimbId, owedSince, today),
+                    api.categoryTransactions(reimbId, owedSince, today.plusDays(1)),
                     prefs.tagPrefix,
                 )
             }
