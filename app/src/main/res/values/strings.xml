@@ -23,4 +23,34 @@
     <string name="tracked_label">Tracked categories (comma-separated)</string>
     <string name="start_day_label">Budget period start day (1 = calendar month)</string>
     <string name="currency_label">Currency symbol</string>
+    <string name="reimb_label">Reimbursements category (created if missing)</string>
+    <string name="add_money_in">ADD MONEY IN</string>
+    <string name="repayment">REPAYMENT</string>
+    <string name="income">INCOME</string>
+    <string name="repayment_hint">SETTLES WHAT SOMEONE OWES YOU</string>
+    <string name="income_hint">PLAIN INCOME — AMOUNT AND CATEGORY</string>
+    <string name="continue_label">CONTINUE</string>
+    <string name="split_entry">SPLIT WITH FRIENDS →</string>
+    <string name="split_receipt">SPLIT RECEIPT</string>
+    <string name="equal">EQUAL</string>
+    <string name="me_chip">ME</string>
+    <string name="person_hint">Add person — type to search</string>
+    <string name="from_contacts">CONTACTS</string>
+    <string name="leader_dots">........................................</string>
+    <string name="yours_today">YOURS · HITS TODAY</string>
+    <string name="save_split">SAVE SPLIT</string>
+    <string name="off_by">ALL SHARES LOCKED · OFF BY %s — TAP EQUAL TO RESET</string>
+    <string name="need_people">Add at least one person to split with</string>
+    <string name="who_paid_back">WHO PAID YOU BACK?</string>
+    <string name="pending_source_hint">PENDING = OWED − REPAID, FROM LUNCH MONEY TAGS</string>
+    <string name="no_pending">NOTHING PENDING — SPLITS SHOW UP HERE</string>
+    <string name="person_detail">%1$d PENDING · OLDEST %2$s</string>
+    <string name="received">RECEIVED</string>
+    <string name="waterline_hint">FILLS OLDEST FIRST</string>
+    <string name="partial_left">PARTIAL · %s STAYS PENDING</string>
+    <string name="overpaid_by">OVERPAID BY %s — NETS AGAINST FUTURE SPLITS</string>
+    <string name="settle_amount">SETTLE %s</string>
+    <string name="income_category_hint">Income category — type to search</string>
+    <string name="save_income">SAVE INCOME</string>
+    <string name="no_income_categories">No income categories in Lunch Money — add one there first</string>
 </resources>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/lock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/space_mono"
+        android:text="○"
+        android:textColor="#5A5A5A"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
+        android:textAllCaps="true"
+        android:textColor="#8F8F8F"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/leader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_weight="1"
+        android:ellipsize="none"
+        android:fontFamily="@font/space_mono"
+        android:maxLines="1"
+        android:text="@string/leader_dots"
+        android:textColor="#2A2A2A"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/remove"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/space_mono"
+        android:padding="4dp"
+        android:text="✕"
+        android:textColor="#5A5A5A"
+        android:textSize="12sp" />
+
+    <EditText
+        android:id="@+id/share_amt"
+        android:layout_width="96dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:background="@null"
+        android:fontFamily="@font/doto"
+        android:textFontWeight="700"
+        android:fontVariationSettings="&apos;ROND&apos; 100"
+        android:gravity="end"
+        android:imeOptions="actionDone"
+        android:inputType="numberDecimal"
+        android:textColor="#FFFFFF"
+        android:textCursorDrawable="@null"
+        android:textSize="20sp" />
+</LinearLayout>

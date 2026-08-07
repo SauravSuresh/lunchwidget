@@ -17,11 +17,13 @@ class SettingsActivity : Activity() {
         val tracked = findViewById<EditText>(R.id.tracked)
         val startDay = findViewById<EditText>(R.id.start_day)
         val currency = findViewById<EditText>(R.id.currency)
+        val reimb = findViewById<EditText>(R.id.reimb)
 
         token.setText(prefs.token)
         tracked.setText(prefs.trackedCategories.joinToString(","))
         startDay.setText(prefs.startDay.toString())
         currency.setText(prefs.currency)
+        reimb.setText(prefs.reimbName)
 
         findViewById<Button>(R.id.save).setOnClickListener {
             val day = startDay.text.toString().toIntOrNull()
@@ -34,6 +36,11 @@ class SettingsActivity : Activity() {
                 .map { it.trim() }.filter { it.isNotEmpty() }
             prefs.startDay = day
             prefs.currency = currency.text.toString().ifBlank { "₹" }
+            val reimbName = reimb.text.toString().trim().ifBlank { "Reimbursements" }
+            if (!reimbName.equals(prefs.reimbName, ignoreCase = true)) {
+                prefs.reimbCategoryId = 0L // re-resolve on next split
+            }
+            prefs.reimbName = reimbName
             RefreshWorker.schedulePeriodic(this)
             RefreshWorker.refreshNow(this)
             Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show()

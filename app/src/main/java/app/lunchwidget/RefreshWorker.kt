@@ -36,6 +36,15 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
                 .entries.sortedByDescending { it.value }
                 .map { it.key }
             prefs.snapshot = Allowance.compute(today, prefs.startDay, budget, spentBefore, spentToday)
+            // Pending owed per person, from the Reimbursements category (spec §7).
+            val reimbId = prefs.reimbCategoryId
+            val owedSince = prefs.owedSince
+            if (reimbId != 0L && owedSince != null) {
+                prefs.pending = SplitMath.groupPending(
+                    api.categoryTransactions(reimbId, owedSince, today),
+                    prefs.tagPrefix,
+                )
+            }
             prefs.lastError = false
         } catch (e: Exception) {
             prefs.lastError = true

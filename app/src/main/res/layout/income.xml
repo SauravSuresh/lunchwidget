@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_bg"
+    android:minWidth="320dp"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
+        android:text="@string/income"
+        android:textColor="#8F8F8F"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/income_amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@null"
+        android:fontFamily="@font/doto"
+        android:textFontWeight="700"
+        android:fontVariationSettings="&apos;ROND&apos; 100"
+        android:hint="@string/amount_hint"
+        android:inputType="numberDecimal"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#3A3A3A"
+        android:textCursorDrawable="@null"
+        android:textSize="48sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="4dp"
+        android:background="#2A2A2A" />
+
+    <AutoCompleteTextView
+        android:id="@+id/income_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/field_bg"
+        android:completionThreshold="1"
+        android:hint="@string/income_category_hint"
+        android:inputType="text"
+        android:padding="14dp"
+        android:popupBackground="#141414"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#5A5A5A"
+        android:textSize="15sp" />
+
+    <Button
+        android:id="@+id/save_income"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/btn_primary"
+        android:fontFamily="@font/space_mono_bold"
+        android:letterSpacing="0.08"
+        android:text="@string/save_income"
+        android:textColor="#000000"
+        android:textSize="14sp" />
+</LinearLayout>

@@ -39,8 +39,26 @@ class LunchMoneyApi(private val token: String) {
                 name = o.getString("name"),
                 groupId = if (o.isNull("group_id")) null else o.getLong("group_id"),
                 isGroup = o.optBoolean("is_group", false),
+                isIncome = o.optBoolean("is_income", false),
+                excluded = o.optBoolean("exclude_from_budget", false) &&
+                    o.optBoolean("exclude_from_totals", false),
             )
         }
+    }
+
+    fun createCategory(name: String): Long {
+        val body = JSONObject()
+            .put("name", name)
+            .put("exclude_from_budget", true)
+            .put("exclude_from_totals", true)
+        return JSONObject(request("POST", "/categories", body)).getLong("category_id")
+    }
+
+    fun excludeCategory(id: Long) {
+        val body = JSONObject()
+            .put("exclude_from_budget", true)
+            .put("exclude_from_totals", true)
+        request("PUT", "/categories/$id", body)
     }
 
     fun budgetTotal(start: LocalDate, end: LocalDate, trackedIds: Set<Long>): Double {
@@ -85,18 +103,83 @@ class LunchMoneyApi(private val token: String) {
         return out
     }
 
+    // Pending fetch: one category, explicit dates (the API defaults to the current
+    // month without them, which would drop old debts), tags included.
+    fun categoryTransactions(categoryId: Long, start: LocalDate, end: LocalDate): List<PendingTxn> {
+        val out = mutableListOf<PendingTxn>()
+        var offset = 0
+        val limit = 500
+        while (true) {
+            val json = request(
+                "GET",
+                "/transactions?category_id=$categoryId&start_date=$start&end_date=$end" +
+                    "&limit=$limit&offset=$offset"
+            )
+            val batch = JSONObject(json).getJSONArray("transactions")
+            for (i in 0 until batch.length()) {
+                val t = batch.getJSONObject(i)
+                val tags = t.optJSONArray("tags") ?: JSONArray()
+                out.add(
+                    PendingTxn(
+                        date = t.optString("date"),
+                        payee = t.optString("payee"),
+                        amount = t.optDouble("amount", 0.0),
+                        tags = (0 until tags.length()).map { j ->
+                            tags.getJSONObject(j).getString("name")
+                        },
+                    )
+                )
+            }
+            if (batch.length() < limit) break
+            offset += limit
+        }
+        return out
+    }
+
     fun insertTransaction(date: LocalDate, amount: Double, categoryId: Long, note: String?) {
-        val txn = JSONObject()
-            .put("date", date.toString())
-            .put("amount", amount)
-            .put("category_id", categoryId)
-            .put("payee", if (note.isNullOrBlank()) "Quick add" else note)
-            .put("status", "uncleared")
-        val body = JSONObject().put("transactions", JSONArray().put(txn))
-        request("POST", "/transactions", body)
+        insertTransactions(listOf(NewTxn(date, amount, categoryId, note)))
+    }
+
+    // Batch insert; returns the new transaction ids. Tag names auto-create (v1).
+    fun insertTransactions(txns: List<NewTxn>): List<Long> {
+        val arr = JSONArray()
+        for (t in txns) {
+            val o = JSONObject()
+                .put("date", t.date.toString())
+                .put("amount", t.amount)
+                .put("category_id", t.categoryId)
+                .put("payee", if (t.note.isNullOrBlank()) "Quick add" else t.note)
+                .put("status", "uncleared")
+            if (t.tags.isNotEmpty()) o.put("tags", JSONArray(t.tags))
+            arr.put(o)
+        }
+        val ids = JSONObject(request("POST", "/transactions", JSONObject().put("transactions", arr)))
+            .getJSONArray("ids")
+        return (0 until ids.length()).map { ids.getLong(it) }
+    }
+
+    fun transactionTags(id: Long): List<String> {
+        val tags = JSONObject(request("GET", "/transactions/$id")).optJSONArray("tags")
+            ?: return emptyList()
+        return (0 until tags.length()).map { tags.getJSONObject(it).getString("name") }
+    }
+
+    fun setTransactionTags(id: Long, tags: List<String>) {
+        val body = JSONObject().put("transaction", JSONObject().put("tags", JSONArray(tags)))
+        request("PUT", "/transactions/$id", body)
     }
 }
 
 class ApiException(message: String) : RuntimeException(message)
 
 data class Txn(val categoryId: Long?, val amount: Double, val date: String)
+
+data class PendingTxn(val date: String, val payee: String, val amount: Double, val tags: List<String>)
+
+data class NewTxn(
+    val date: LocalDate,
+    val amount: Double,
+    val categoryId: Long,
+    val note: String?,
+    val tags: List<String> = emptyList(),
+)
