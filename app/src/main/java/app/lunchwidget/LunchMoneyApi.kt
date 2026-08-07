@@ -155,6 +155,9 @@ class LunchMoneyApi(private val token: String) {
         }
         val ids = JSONObject(request("POST", "/transactions", JSONObject().put("transactions", arr)))
             .getJSONArray("ids")
+        if (ids.length() != txns.size) {
+            throw ApiException("Posted ${txns.size} transactions, server accepted ${ids.length()}")
+        }
         return (0 until ids.length()).map { ids.getLong(it) }
     }
 

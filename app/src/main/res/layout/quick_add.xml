@@ -106,21 +106,22 @@
 
         <TextView
             android:id="@+id/split"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:fontFamily="@font/space_mono"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/chip"
+            android:fontFamily="@font/space_mono_bold"
+            android:gravity="center"
             android:letterSpacing="0.08"
-            android:padding="4dp"
             android:text="@string/split_entry"
-            android:textColor="#5A5A5A"
-            android:textSize="11sp" />
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
 
         <Button
             android:id="@+id/save"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/btn_primary"
             android:fontFamily="@font/space_mono_bold"
             android:letterSpacing="0.08"
