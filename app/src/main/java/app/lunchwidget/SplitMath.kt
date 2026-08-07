@@ -112,6 +112,28 @@ object SplitMath {
         return out
     }
 
+    /**
+     * Display initials for (key, name) pairs: "Hari Govind" → HG, "You" → Y. On
+     * collision everyone in the clash extends from the start of the squashed name
+     * until unique: "Acchan"/"Amma" → AC/AM.
+     */
+    fun uniqueInitials(people: List<Pair<String, String>>): Map<String, String> {
+        val names = people.associate { it.first to it.second.trim() }
+        val ini = names.mapValues { (_, name) ->
+            val words = name.split(Regex("\\s+"))
+            if (words.size > 1) words.take(2).joinToString("") { it.take(1).uppercase() }
+            else words[0].take(1).uppercase()
+        }.toMutableMap()
+        for (len in 2..4) {
+            val dupes = ini.entries.groupBy { it.value }.filter { it.value.size > 1 }
+            if (dupes.isEmpty()) break
+            for (e in dupes.flatMap { it.value }) {
+                ini[e.key] = names.getValue(e.key).replace(Regex("\\s+"), "").take(len).uppercase()
+            }
+        }
+        return ini
+    }
+
     fun pendingToJson(pending: List<PendingPerson>): String {
         val arr = JSONArray()
         for (p in pending) {

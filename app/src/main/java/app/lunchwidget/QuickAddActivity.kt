@@ -395,21 +395,18 @@ class QuickAddActivity : Activity() {
 
     // ---------------------------------------------------------------- itemize
 
-    // "Hari Govind" → HG, "You" → Y; used as the assign toggles on item lines.
-    private fun initialsOf(p: Share): String {
-        val name = if (p.isMe) "You" else p.display
-        val words = name.trim().split(Regex("\\s+"))
-        return words.take(2).joinToString("") { it.first().uppercase() }
-    }
+    private fun uniqueInitials(ps: List<Share>): Map<String, String> =
+        SplitMath.uniqueInitials(ps.map { it.slug to (if (it.isMe) "You" else it.display) })
 
     private fun showItemize() {
         screen = Screen.ITEMIZE
         setContentView(R.layout.itemize)
         findViewById<TextView>(R.id.itemize_title).text =
             getString(R.string.itemize_title, fmtA(splitTotal))
+        val ini = uniqueInitials(itemizeParticipants())
         findViewById<TextView>(R.id.itemize_legend).text =
             itemizeParticipants().joinToString("   ") {
-                "${initialsOf(it)} ${if (it.isMe) "YOU" else it.display.uppercase(Locale.US)}"
+                "${ini.getValue(it.slug)} ${if (it.isMe) "YOU" else it.display.uppercase(Locale.US)}"
             }
         if (billItems.isEmpty()) billItems.add(UiItem())
         findViewById<TextView>(R.id.add_item).setOnClickListener {
@@ -460,16 +457,22 @@ class QuickAddActivity : Activity() {
             }
             val chips = row.findViewById<LinearLayout>(R.id.bill_chips)
             val d = resources.displayMetrics.density
+            val ini = uniqueInitials(itemizeParticipants())
             for (p in itemizeParticipants()) {
                 val chip = TextView(this)
                 val on = p.slug in item.assignees
-                chip.text = initialsOf(p)
+                chip.text = ini.getValue(p.slug)
                 chip.setTextColor(if (on) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
                 chip.setBackgroundResource(if (on) R.drawable.chip_on else R.drawable.chip)
                 chip.textSize = 10f
                 chip.gravity = android.view.Gravity.CENTER
                 chip.typeface = resources.getFont(R.font.space_mono_bold)
-                val lp = LinearLayout.LayoutParams((30 * d).toInt(), (30 * d).toInt())
+                chip.minWidth = (30 * d).toInt()
+                val pad = (8 * d).toInt()
+                chip.setPadding(pad, 0, pad, 0)
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, (30 * d).toInt()
+                )
                 lp.marginEnd = (6 * d).toInt()
                 chip.setOnClickListener {
                     if (p.slug in item.assignees) item.assignees.remove(p.slug)
