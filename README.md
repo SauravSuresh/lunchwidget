@@ -99,7 +99,7 @@ Every 4 hours — and instantly after each quick-add or a tap on ↻ — a
 WorkManager job pulls categories, budgets, and the period's transactions,
 recomputes the allowance, caches a snapshot, and redraws the widget. Offline
 it renders the last snapshot with a STALE marker. Quick-adds post as
-uncleared transactions dated today.
+reviewed (cleared) transactions dated today.
 
 ```sh
 ./gradlew test   # unit tests for the allowance math
