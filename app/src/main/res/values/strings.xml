@@ -59,7 +59,7 @@
     <string name="item_hint">item</string>
     <string name="itemize_done">DONE</string>
     <string name="items_vs_bill">ITEMS %1$s · BILL %2$s</string>
-    <string name="tax_fees">" · +%s%% TAX &amp; FEES"</string>
-    <string name="discount">" · −%s%% DISCOUNT"</string>
+    <string name="tax_fees">+%s%% TAX &amp; FEES</string>
+    <string name="discount">−%s%% DISCOUNT</string>
     <string name="assign_all">ASSIGN EVERY ITEM TO SOMEONE</string>
 </resources>

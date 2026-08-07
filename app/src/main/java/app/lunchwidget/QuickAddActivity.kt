@@ -395,11 +395,22 @@ class QuickAddActivity : Activity() {
 
     // ---------------------------------------------------------------- itemize
 
+    // "Hari Govind" → HG, "You" → Y; used as the assign toggles on item lines.
+    private fun initialsOf(p: Share): String {
+        val name = if (p.isMe) "You" else p.display
+        val words = name.trim().split(Regex("\\s+"))
+        return words.take(2).joinToString("") { it.first().uppercase() }
+    }
+
     private fun showItemize() {
         screen = Screen.ITEMIZE
         setContentView(R.layout.itemize)
         findViewById<TextView>(R.id.itemize_title).text =
             getString(R.string.itemize_title, fmtA(splitTotal))
+        findViewById<TextView>(R.id.itemize_legend).text =
+            itemizeParticipants().joinToString("   ") {
+                "${initialsOf(it)} ${if (it.isMe) "YOU" else it.display.uppercase(Locale.US)}"
+            }
         if (billItems.isEmpty()) billItems.add(UiItem())
         findViewById<TextView>(R.id.add_item).setOnClickListener {
             billItems.add(UiItem())
@@ -448,21 +459,18 @@ class QuickAddActivity : Activity() {
                 renderItemize()
             }
             val chips = row.findViewById<LinearLayout>(R.id.bill_chips)
+            val d = resources.displayMetrics.density
             for (p in itemizeParticipants()) {
                 val chip = TextView(this)
                 val on = p.slug in item.assignees
-                chip.text = if (p.isMe) "YOU" else p.display.uppercase(Locale.US)
+                chip.text = initialsOf(p)
                 chip.setTextColor(if (on) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
                 chip.setBackgroundResource(if (on) R.drawable.chip_on else R.drawable.chip)
-                chip.textSize = 11f
-                chip.letterSpacing = 0.08f
-                chip.typeface = resources.getFont(R.font.space_mono)
-                val pad = (10 * resources.displayMetrics.density).toInt()
-                chip.setPadding(pad + 4, pad / 2 + 2, pad + 4, pad / 2 + 2)
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.marginEnd = (8 * resources.displayMetrics.density).toInt()
+                chip.textSize = 10f
+                chip.gravity = android.view.Gravity.CENTER
+                chip.typeface = resources.getFont(R.font.space_mono_bold)
+                val lp = LinearLayout.LayoutParams((30 * d).toInt(), (30 * d).toInt())
+                lp.marginEnd = (6 * d).toInt()
                 chip.setOnClickListener {
                     if (p.slug in item.assignees) item.assignees.remove(p.slug)
                     else item.assignees.add(p.slug)
@@ -481,16 +489,19 @@ class QuickAddActivity : Activity() {
         val itemsSum = SplitMath.round2(valid.sumOf { it.amount })
         val allAssigned = valid.isNotEmpty() && valid.all { it.assignees.isNotEmpty() }
         val footer = findViewById<TextView>(R.id.items_footer)
+        // Receipt-style footer: subtotal line, then the adjustment on its own line.
         var text = getString(R.string.items_vs_bill, fmtA(itemsSum), fmtA(splitTotal))
         if (itemsSum > 0) {
             val pct = (splitTotal - itemsSum) / itemsSum * 100
             val pctStr = String.format(Locale.US, if (pct % 1.0 == 0.0) "%.0f" else "%.1f", Math.abs(pct))
-            if (pct >= 0.05) text += getString(R.string.tax_fees, pctStr)
-            else if (pct <= -0.05) text += getString(R.string.discount, pctStr)
+            if (pct >= 0.05) text += "\n" + getString(R.string.tax_fees, pctStr)
+            else if (pct <= -0.05) text += "\n" + getString(R.string.discount, pctStr)
         }
         if (!allAssigned) text += "\n" + getString(R.string.assign_all)
         footer.text = text
-        findViewById<Button>(R.id.itemize_done).isEnabled = allAssigned
+        val done = findViewById<Button>(R.id.itemize_done)
+        done.isEnabled = allAssigned
+        done.alpha = if (allAssigned) 1f else 0.3f
     }
 
     private fun applyItemize() {
