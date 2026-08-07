@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_bg"
+    android:minWidth="320dp"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/space_mono"
+            android:letterSpacing="0.08"
+            android:text="@string/split_receipt"
+            android:textColor="#8F8F8F"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/equal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/space_mono"
+            android:letterSpacing="0.08"
+            android:padding="2dp"
+            android:text="@string/equal"
+            android:textColor="#5A5A5A"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="bottom"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/total"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/doto"
+            android:textFontWeight="700"
+            android:fontVariationSettings="&apos;ROND&apos; 100"
+            android:textColor="#FFFFFF"
+            android:textSize="40sp" />
+
+        <TextView
+            android:id="@+id/split_note"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/space_mono"
+            android:letterSpacing="0.08"
+            android:textAllCaps="true"
+            android:textColor="#8F8F8F"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/prop_bar"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal" />
+
+    <LinearLayout
+        android:id="@+id/shares"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="vertical" />
+
+    <TextView
+        android:id="@+id/offby"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
+        android:textColor="#D71921"
+        android:textSize="11sp"
+        android:visibility="gone" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:background="#2A2A2A" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/me_chip"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/chip_on"
+            android:fontFamily="@font/space_mono"
+            android:gravity="center"
+            android:letterSpacing="0.08"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/me_chip"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <AutoCompleteTextView
+            android:id="@+id/person"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/field_bg"
+            android:completionThreshold="1"
+            android:hint="@string/person_hint"
+            android:imeOptions="actionDone"
+            android:inputType="textPersonName|textCapWords"
+            android:padding="12dp"
+            android:popupBackground="#141414"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#5A5A5A"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/contacts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:fontFamily="@font/space_mono"
+            android:letterSpacing="0.08"
+            android:padding="4dp"
+            android:text="@string/from_contacts"
+            android:textColor="#5A5A5A"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/space_mono"
+            android:letterSpacing="0.08"
+            android:text="@string/yours_today"
+            android:textColor="#8F8F8F"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/yours"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/doto"
+            android:textFontWeight="700"
+            android:fontVariationSettings="&apos;ROND&apos; 100"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/save_split"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/btn_primary"
+        android:fontFamily="@font/space_mono_bold"
+        android:letterSpacing="0.08"
+        android:text="@string/save_split"
+        android:textColor="#000000"
+        android:textSize="14sp" />
+</LinearLayout>
+</ScrollView>

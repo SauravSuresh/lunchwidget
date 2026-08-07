@@ -84,6 +84,8 @@ class Prefs(context: Context) {
                     name = o.getString("name"),
                     groupId = if (o.isNull("groupId")) null else o.getLong("groupId"),
                     isGroup = o.getBoolean("isGroup"),
+                    isIncome = o.optBoolean("isIncome", false),
+                    excluded = o.optBoolean("excluded", false),
                 )
             }
         }
@@ -96,8 +98,50 @@ class Prefs(context: Context) {
                         .put("name", c.name)
                         .put("groupId", c.groupId)
                         .put("isGroup", c.isGroup)
+                        .put("isIncome", c.isIncome)
+                        .put("excluded", c.excluded)
                 )
             }
             sp.edit().putString("categories", arr.toString()).apply()
         }
+
+    // --- income / split / repayment (docs/spec-income-split.md) ---
+
+    var reimbName: String
+        get() = sp.getString("reimb_name", "Reimbursements") ?: "Reimbursements"
+        set(v) = sp.edit().putString("reimb_name", v.ifBlank { "Reimbursements" }).apply()
+
+    var reimbCategoryId: Long
+        get() = sp.getLong("reimb_id", 0L)
+        set(v) = sp.edit().putLong("reimb_id", v).apply()
+
+    var owedSince: LocalDate?
+        get() = sp.getString("owed_since", null)?.let { LocalDate.parse(it) }
+        set(v) = sp.edit().putString("owed_since", v?.toString()).apply()
+
+    // "owed:" unless the colon turned out illegal in tag names (then "owed-").
+    var tagPrefix: String
+        get() = sp.getString("tag_prefix", "owed:") ?: "owed:"
+        set(v) = sp.edit().putString("tag_prefix", v).apply()
+
+    var tagPrefixVerified: Boolean
+        get() = sp.getBoolean("tag_prefix_verified", false)
+        set(v) = sp.edit().putBoolean("tag_prefix_verified", v).apply()
+
+    // Recency-ordered "slug|display" pairs; display names never leave the device.
+    var people: List<Pair<String, String>>
+        get() = (sp.getString("people", "") ?: "").split("\n")
+            .filter { it.contains("|") }
+            .map { it.substringBefore("|") to it.substringAfter("|") }
+        set(v) = sp.edit()
+            .putString("people", v.joinToString("\n") { "${it.first}|${it.second}" })
+            .apply()
+
+    fun touchPerson(slug: String, display: String) {
+        people = listOf(slug to display) + people.filter { it.first != slug }
+    }
+
+    var pending: List<PendingPerson>
+        get() = sp.getString("pending", null)?.let { SplitMath.pendingFromJson(it) } ?: emptyList()
+        set(v) = sp.edit().putString("pending", SplitMath.pendingToJson(v)).apply()
 }

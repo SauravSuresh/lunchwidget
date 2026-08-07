@@ -3,7 +3,15 @@ package app.lunchwidget
 import java.time.LocalDate
 import java.time.YearMonth
 
-data class Category(val id: Long, val name: String, val groupId: Long?, val isGroup: Boolean)
+data class Category(
+    val id: Long,
+    val name: String,
+    val groupId: Long?,
+    val isGroup: Boolean,
+    val isIncome: Boolean = false,
+    // Both exclude_from_budget and exclude_from_totals — the Reimbursements contract.
+    val excluded: Boolean = false,
+)
 
 data class Snapshot(
     val periodStart: LocalDate,

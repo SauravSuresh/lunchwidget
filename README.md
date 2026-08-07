@@ -42,6 +42,21 @@ sorted by what you've used recently) → save. The transaction posts to Lunch
 Money, the allowance recomputes, and the bar moves — immediately. Logging an
 expense costs about four seconds, which is cheap enough to actually do.
 
+## Splits and money coming back
+
+Group bills get a receipt-style split step: pick people (typed, remembered, or
+from contacts), shares split equally, edit any share and the rest snap to
+rebalance. Only **your** share counts against today's number — the rest posts
+to an excluded Reimbursements category in Lunch Money, tagged per person
+(`owed:rahul`), so friends' portions never pollute your budget.
+
+When someone pays you back, flip the quick-add to `+`: pick the person, enter
+what you received, and the amount pours over their pending items oldest-first —
+partial payments just leave the remainder pending. One negative tagged
+transaction posts; the ledger *is* Lunch Money, the widget stores nothing.
+General income takes the same `+` path into your income categories. Full
+design: [docs/spec-income-split.md](docs/spec-income-split.md).
+
 ## Nothing style
 
 I use a Nothing phone, so the widget dresses like it belongs there: OLED
@@ -74,6 +89,9 @@ dependencies beyond AndroidX WorkManager.
 - **Period start day** — default `29` (salary-cycle months, 29th–28th);
   `1` for calendar months.
 - **Currency symbol** — display only, default `₹`.
+- **Reimbursements category** — default `Reimbursements`; looked up by name at
+  the first split and created (excluded from budget and totals) if missing.
+  Point it at an existing category to reuse it — its exclude flags get fixed.
 
 ## How it works
 
