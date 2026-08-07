@@ -7,7 +7,7 @@ Glossary for lunchwidget. Terms mean exactly this everywhere — code, tickets, 
 - **Share** — the user's own portion of a split bill. The only part that counts against the daily allowance.
 - **Owed portion** — the part of a split bill others owe. Posts to the Reimbursements category, tagged per person; never touches the allowance.
 - **Reimbursements category** — the Lunch Money category (excluded from budget and totals) holding all owed portions and repayments. Named in settings, default `Reimbursements`.
-- **Person** — whoever owes the user money. A plain string name; identity lives in the transaction tag (scheme: issue #4).
+- **Person** — whoever owes the user money. Identity is the tag `owed:<slug>`; slug = display name lowercased, trimmed, spaces→hyphen. Display names live only in the widget's local people list.
 - **Repayment** — money received against pending owed portions. A negative-amount transaction in the Reimbursements category, tagged with the person.
 - **General income** — money received that settles nothing. Ordinary income transaction, outside the Reimbursements category.
 - **Pending** — per person: sum of their owed portions minus their repayments. Computed from Lunch Money; the widget keeps no ledger.
