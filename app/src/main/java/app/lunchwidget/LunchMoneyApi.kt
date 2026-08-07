@@ -149,7 +149,7 @@ class LunchMoneyApi(private val token: String) {
                 .put("amount", t.amount)
                 .put("category_id", t.categoryId)
                 .put("payee", if (t.note.isNullOrBlank()) "Quick add" else t.note)
-                .put("status", "uncleared")
+                .put("status", "cleared") // you typed it yourself — it's reviewed
             if (t.tags.isNotEmpty()) o.put("tags", JSONArray(t.tags))
             arr.put(o)
         }
