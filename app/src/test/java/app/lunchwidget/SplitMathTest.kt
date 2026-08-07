@@ -147,6 +147,18 @@ class SplitMathTest {
     }
 
     @Test
+    fun initialsExtendOnCollision() {
+        val ini = SplitMath.uniqueInitials(
+            listOf("" to "You", "ada" to "Ada", "alex" to "Alex", "casey-blake" to "Casey Blake")
+        )
+        assertEquals("Y", ini[""])
+        assertEquals("AD", ini["ada"])
+        assertEquals("AL", ini["alex"])
+        assertEquals("CB", ini["casey-blake"])
+        assertEquals(ini.size, ini.values.toSet().size)
+    }
+
+    @Test
     fun pendingJsonRoundTrips() {
         val pending = listOf(
             PendingPerson("alex", 533.33, listOf(OwedItem("2026-07-19", "Movie", 533.33))),
