@@ -20,6 +20,16 @@
         android:textColor="#8F8F8F"
         android:textSize="11sp" />
 
+    <TextView
+        android:id="@+id/itemize_legend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
+        android:textColor="#5A5A5A"
+        android:textSize="10sp" />
+
     <LinearLayout
         android:id="@+id/bill_items"
         android:layout_width="match_parent"
