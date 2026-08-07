@@ -467,11 +467,11 @@ class QuickAddActivity : Activity() {
                 chip.textSize = 10f
                 chip.gravity = android.view.Gravity.CENTER
                 chip.typeface = resources.getFont(R.font.space_mono_bold)
-                chip.minWidth = (30 * d).toInt()
+                chip.minWidth = (26 * d).toInt()
                 val pad = (8 * d).toInt()
                 chip.setPadding(pad, 0, pad, 0)
                 val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, (30 * d).toInt()
+                    LinearLayout.LayoutParams.WRAP_CONTENT, (26 * d).toInt()
                 )
                 lp.marginEnd = (6 * d).toInt()
                 chip.setOnClickListener {
@@ -494,7 +494,9 @@ class QuickAddActivity : Activity() {
         val footer = findViewById<TextView>(R.id.items_footer)
         // Receipt-style footer: subtotal line, then the adjustment on its own line.
         var text = getString(R.string.items_vs_bill, fmtA(itemsSum), fmtA(splitTotal))
-        if (itemsSum > 0) {
+        // Only surface the derived adjustment once entry is complete — mid-typing
+        // percentages are meaningless noise.
+        if (itemsSum > 0 && allAssigned) {
             val pct = (splitTotal - itemsSum) / itemsSum * 100
             val pctStr = String.format(Locale.US, if (pct % 1.0 == 0.0) "%.0f" else "%.1f", Math.abs(pct))
             if (pct >= 0.05) text += "\n" + getString(R.string.tax_fees, pctStr)

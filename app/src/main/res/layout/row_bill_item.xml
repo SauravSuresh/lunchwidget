@@ -2,58 +2,70 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:paddingTop="9dp"
-    android:paddingBottom="9dp">
+    android:orientation="vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
-        android:id="@+id/bill_chips"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <EditText
-        android:id="@+id/bill_label"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_weight="1"
-        android:background="@null"
-        android:fontFamily="@font/space_mono"
-        android:hint="@string/item_hint"
-        android:imeOptions="actionNext"
-        android:inputType="text"
-        android:textColor="#8F8F8F"
-        android:textColorHint="#3A3A3A"
-        android:textSize="13sp" />
+        <EditText
+            android:id="@+id/bill_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:fontFamily="@font/space_mono"
+            android:hint="@string/item_hint"
+            android:imeOptions="actionNext"
+            android:inputType="text"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#3A3A3A"
+            android:textSize="14sp" />
 
-    <EditText
-        android:id="@+id/bill_amt"
-        android:layout_width="84dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:background="@null"
-        android:fontFamily="@font/doto"
-        android:textFontWeight="700"
-        android:fontVariationSettings="&apos;ROND&apos; 100"
-        android:gravity="end"
-        android:hint="@string/amount_hint"
-        android:imeOptions="actionDone"
-        android:inputType="numberDecimal"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#3A3A3A"
-        android:textCursorDrawable="@null"
-        android:textSize="20sp" />
+        <EditText
+            android:id="@+id/bill_amt"
+            android:layout_width="84dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@null"
+            android:fontFamily="@font/doto"
+            android:textFontWeight="700"
+            android:fontVariationSettings="&apos;ROND&apos; 100"
+            android:gravity="end"
+            android:hint="@string/amount_hint"
+            android:imeOptions="actionDone"
+            android:inputType="numberDecimal"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#3A3A3A"
+            android:textCursorDrawable="@null"
+            android:textSize="20sp" />
 
-    <TextView
-        android:id="@+id/bill_remove"
-        android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/bill_remove"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/space_mono"
+            android:padding="6dp"
+            android:text="✕"
+            android:textColor="#5A5A5A"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:fontFamily="@font/space_mono"
-        android:padding="6dp"
-        android:text="✕"
-        android:textColor="#5A5A5A"
-        android:textSize="12sp" />
+        android:layout_marginTop="5dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/bill_chips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
 </LinearLayout>
