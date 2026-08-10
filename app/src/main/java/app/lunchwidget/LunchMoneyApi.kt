@@ -61,6 +61,24 @@ class LunchMoneyApi(private val token: String) {
         request("PUT", "/categories/$id", body)
     }
 
+    // Manual assets only — Lunch Money rejects asset_id pointing at a Plaid account.
+    // Investments sort last: you don't buy lunch out of a brokerage.
+    fun assets(): List<Asset> {
+        val arr = JSONObject(request("GET", "/assets")).getJSONArray("assets")
+        return (0 until arr.length()).mapNotNull { i ->
+            val o = arr.getJSONObject(i)
+            if (!o.isNull("closed_on")) return@mapNotNull null
+            val display = if (o.isNull("display_name")) "" else o.optString("display_name")
+            Asset(
+                id = o.getLong("id"),
+                name = display.ifBlank { o.optString("name") },
+                type = o.optString("type_name"),
+            )
+        }.sortedWith(
+            compareBy({ if (it.type == "investment") 1 else 0 }, { it.name.lowercase() })
+        )
+    }
+
     fun budgetTotal(start: LocalDate, end: LocalDate, trackedIds: Set<Long>): Double {
         val arr = JSONArray(request("GET", "/budgets?start_date=$start&end_date=$end"))
         val periodKey = start.toString()
@@ -136,8 +154,14 @@ class LunchMoneyApi(private val token: String) {
         return out
     }
 
-    fun insertTransaction(date: LocalDate, amount: Double, categoryId: Long, note: String?) {
-        insertTransactions(listOf(NewTxn(date, amount, categoryId, note)))
+    fun insertTransaction(
+        date: LocalDate,
+        amount: Double,
+        categoryId: Long,
+        note: String?,
+        assetId: Long = 0L,
+    ) {
+        insertTransactions(listOf(NewTxn(date, amount, categoryId, note, assetId = assetId)))
     }
 
     // Batch insert; returns the new transaction ids. Tag names auto-create (v1).
@@ -150,6 +174,7 @@ class LunchMoneyApi(private val token: String) {
                 .put("category_id", t.categoryId)
                 .put("payee", if (t.note.isNullOrBlank()) "Quick add" else t.note)
                 .put("status", "cleared") // you typed it yourself — it's reviewed
+            if (t.assetId != 0L) o.put("asset_id", t.assetId)
             if (t.tags.isNotEmpty()) o.put("tags", JSONArray(t.tags))
             arr.put(o)
         }
@@ -185,4 +210,7 @@ data class NewTxn(
     val categoryId: Long,
     val note: String?,
     val tags: List<String> = emptyList(),
+    val assetId: Long = 0L, // 0 = don't send asset_id at all
 )
+
+data class Asset(val id: Long, val name: String, val type: String)

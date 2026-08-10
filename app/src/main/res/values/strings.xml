@@ -62,4 +62,19 @@
     <string name="tax_fees">+%s%% TAX &amp; FEES</string>
     <string name="discount">−%s%% DISCOUNT</string>
     <string name="assign_all">ASSIGN EVERY ITEM TO SOMEONE</string>
+    <string name="default_account_label">Default account for quick add</string>
+    <string name="no_default_account">No account</string>
+    <string name="account_label">ACCOUNT · %s</string>
+    <string name="account_none">ACCOUNT · NONE</string>
+    <string name="pick_account">Account</string>
+    <string name="no_assets">Accounts not loaded yet — open settings and save first</string>
+    <string name="transfer">TRANSFER</string>
+    <string name="transfer_from">FROM · %s</string>
+    <string name="transfer_from_none">FROM · TAP TO PICK</string>
+    <string name="transfer_to">TO · %s</string>
+    <string name="transfer_to_none">TO · TAP TO PICK</string>
+    <string name="save_transfer">SAVE TRANSFER</string>
+    <string name="same_account">Pick two different accounts</string>
+    <string name="pick_both_accounts">Pick both accounts</string>
+    <string name="no_transfer_category">No transfer category in Lunch Money — add one there first</string>
 </resources>

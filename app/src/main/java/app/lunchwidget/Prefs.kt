@@ -105,6 +105,30 @@ class Prefs(context: Context) {
             sp.edit().putString("categories", arr.toString()).apply()
         }
 
+    // --- accounts ---
+
+    var assets: List<Asset>
+        get() {
+            val raw = sp.getString("assets", null) ?: return emptyList()
+            val arr = JSONArray(raw)
+            return (0 until arr.length()).map { i ->
+                val o = arr.getJSONObject(i)
+                Asset(o.getLong("id"), o.getString("name"), o.optString("type"))
+            }
+        }
+        set(v) {
+            val arr = JSONArray()
+            for (a in v) {
+                arr.put(JSONObject().put("id", a.id).put("name", a.name).put("type", a.type))
+            }
+            sp.edit().putString("assets", arr.toString()).apply()
+        }
+
+    // 0 = no default; transactions then post without asset_id, as before.
+    var defaultAssetId: Long
+        get() = sp.getLong("default_asset", 0L)
+        set(v) = sp.edit().putLong("default_asset", v).apply()
+
     // --- income / split / repayment (docs/spec-income-split.md) ---
 
     var reimbName: String

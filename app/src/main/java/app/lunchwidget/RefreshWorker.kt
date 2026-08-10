@@ -19,6 +19,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
             val api = LunchMoneyApi(prefs.token)
             val categories = api.categories()
             prefs.categories = categories
+            prefs.assets = api.assets()
             val today = LocalDate.now()
             val (start, end) = Allowance.period(today, prefs.startDay)
             val trackedIds = Allowance.trackedIds(categories, prefs.trackedCategories)

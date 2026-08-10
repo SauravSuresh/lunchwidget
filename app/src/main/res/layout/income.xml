@@ -53,6 +53,18 @@
         android:textColorHint="#5A5A5A"
         android:textSize="15sp" />
 
+    <TextView
+        android:id="@+id/account"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/field_bg"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
+        android:padding="14dp"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp" />
+
     <Button
         android:id="@+id/save_income"
         android:layout_width="match_parent"

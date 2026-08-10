@@ -1,6 +1,7 @@
 package app.lunchwidget
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -35,10 +36,15 @@ class QuickAddActivity : Activity() {
 
     // Entry state, preserved across setContentView swaps.
     private var plus = false
+    private var transfer = false
     private var modeRepayment = true
     private var entryAmountText = ""
     private var entryCategoryText = ""
     private var entryNoteText = ""
+
+    // Account the money left or landed in. Also the FROM side of a transfer.
+    private var assetId = 0L
+    private var toAssetId = 0L
 
     // Split state.
     private val me = Share("", "You", isMe = true)
@@ -57,6 +63,7 @@ class QuickAddActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
+        assetId = prefs.defaultAssetId
         if (prefs.categories.none { !it.isGroup }) {
             Toast.makeText(this, R.string.no_categories, Toast.LENGTH_LONG).show()
             finish()
@@ -86,6 +93,45 @@ class QuickAddActivity : Activity() {
             .uppercase(Locale.US)
     } catch (e: Exception) {
         iso
+    }
+
+    private fun chipOn(tv: TextView, on: Boolean) {
+        tv.setBackgroundResource(if (on) R.drawable.chip_on else R.drawable.chip)
+        tv.setTextColor(if (on) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
+    }
+
+    // Tap-to-pick account field. Same chip on every screen that posts money;
+    // index 0 of the dialog is "no account", which posts without asset_id.
+    private fun wireAccount(
+        viewId: Int,
+        labelRes: Int,
+        noneRes: Int,
+        get: () -> Long,
+        set: (Long) -> Unit,
+    ) {
+        val chip = findViewById<TextView>(viewId)
+        fun render() {
+            val name = prefs.assets.firstOrNull { it.id == get() }?.name
+            chip.text = if (name == null) getString(noneRes)
+            else getString(labelRes, name.uppercase(Locale.US))
+        }
+        chip.setOnClickListener {
+            val assets = prefs.assets
+            if (assets.isEmpty()) {
+                Toast.makeText(this, R.string.no_assets, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            val labels = (listOf(getString(R.string.no_default_account)) + assets.map { it.name })
+                .toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle(R.string.pick_account)
+                .setItems(labels) { _, i ->
+                    set(if (i == 0) 0L else assets[i - 1].id)
+                    render()
+                }
+                .show()
+        }
+        render()
     }
 
     private fun displayName(slug: String): String =
@@ -130,34 +176,45 @@ class QuickAddActivity : Activity() {
         val title = findViewById<TextView>(R.id.title)
         val minus = findViewById<TextView>(R.id.sign_minus)
         val plusBtn = findViewById<TextView>(R.id.sign_plus)
+        val transferBtn = findViewById<TextView>(R.id.sign_transfer)
         val expense = findViewById<LinearLayout>(R.id.expense_section)
         val income = findViewById<LinearLayout>(R.id.income_section)
+        val transferSection = findViewById<LinearLayout>(R.id.transfer_section)
         val modeRepay = findViewById<TextView>(R.id.mode_repayment)
         val modeIncome = findViewById<TextView>(R.id.mode_income)
         val modeHint = findViewById<TextView>(R.id.mode_hint)
 
+        wireAccount(R.id.account, R.string.account_label, R.string.account_none,
+            { assetId }, { assetId = it })
+
         fun applySign() {
-            title.setText(if (plus) R.string.add_money_in else R.string.add_expense)
-            expense.visibility = if (plus) View.GONE else View.VISIBLE
+            title.setText(
+                when {
+                    transfer -> R.string.transfer
+                    plus -> R.string.add_money_in
+                    else -> R.string.add_expense
+                }
+            )
+            val minusOn = !plus && !transfer
+            expense.visibility = if (minusOn) View.VISIBLE else View.GONE
             income.visibility = if (plus) View.VISIBLE else View.GONE
-            minus.setBackgroundResource(if (plus) R.drawable.chip else R.drawable.chip_on)
-            minus.setTextColor(if (plus) 0xFF5A5A5A.toInt() else 0xFFFFFFFF.toInt())
-            plusBtn.setBackgroundResource(if (plus) R.drawable.chip_on else R.drawable.chip)
-            plusBtn.setTextColor(if (plus) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
-            if (!plus) amountField.requestFocus()
+            transferSection.visibility = if (transfer) View.VISIBLE else View.GONE
+            chipOn(minus, minusOn)
+            chipOn(plusBtn, plus)
+            chipOn(transferBtn, transfer)
+            if (minusOn) amountField.requestFocus()
         }
         fun applyMode() {
-            modeRepay.setBackgroundResource(if (modeRepayment) R.drawable.chip_on else R.drawable.chip)
-            modeRepay.setTextColor(if (modeRepayment) 0xFFFFFFFF.toInt() else 0xFF5A5A5A.toInt())
-            modeIncome.setBackgroundResource(if (modeRepayment) R.drawable.chip else R.drawable.chip_on)
-            modeIncome.setTextColor(if (modeRepayment) 0xFF5A5A5A.toInt() else 0xFFFFFFFF.toInt())
+            chipOn(modeRepay, modeRepayment)
+            chipOn(modeIncome, !modeRepayment)
             modeHint.setText(if (modeRepayment) R.string.repayment_hint else R.string.income_hint)
         }
-        minus.setOnClickListener { plus = false; applySign() }
-        plusBtn.setOnClickListener { plus = true; applySign() }
+        minus.setOnClickListener { plus = false; transfer = false; applySign() }
+        plusBtn.setOnClickListener { plus = true; transfer = false; applySign() }
+        transferBtn.setOnClickListener { plus = false; transfer = true; applySign() }
         modeRepay.setOnClickListener { modeRepayment = true; applyMode() }
         modeIncome.setOnClickListener { modeRepayment = false; applyMode() }
-        applySign(); applyMode()
+        applySign(); applyMode(); wireTransfer()
 
         findViewById<Button>(R.id.continue_btn).setOnClickListener {
             if (modeRepayment) showPersons() else showIncome()
@@ -199,7 +256,66 @@ class QuickAddActivity : Activity() {
             thread {
                 try {
                     LunchMoneyApi(prefs.token)
-                        .insertTransaction(LocalDate.now(), amount, chosen.id, note)
+                        .insertTransaction(LocalDate.now(), amount, chosen.id, note, assetId)
+                    RefreshWorker.refreshNow(this)
+                    runOnUiThread {
+                        Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
+                        save.isEnabled = true
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- transfer
+
+    private fun wireTransfer() {
+        wireAccount(R.id.transfer_from, R.string.transfer_from, R.string.transfer_from_none,
+            { assetId }, { assetId = it })
+        wireAccount(R.id.transfer_to, R.string.transfer_to, R.string.transfer_to_none,
+            { toAssetId }, { toAssetId = it })
+
+        val amountField = findViewById<EditText>(R.id.transfer_amount)
+        val save = findViewById<Button>(R.id.save_transfer)
+        save.setOnClickListener {
+            val amount = amountField.text.toString().toDoubleOrNull()
+            if (amount == null || amount <= 0) {
+                amountField.error = getString(R.string.bad_amount)
+                return@setOnClickListener
+            }
+            if (assetId == 0L || toAssetId == 0L) {
+                Toast.makeText(this, R.string.pick_both_accounts, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (assetId == toAssetId) {
+                Toast.makeText(this, R.string.same_account, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // ponytail: match Lunch Money's own transfer category by name rather than
+            // adding a setting for it — it ships with one and it's already excluded.
+            val cat = prefs.categories
+                .firstOrNull { !it.isGroup && it.name.contains("transfer", ignoreCase = true) }
+            if (cat == null) {
+                Toast.makeText(this, R.string.no_transfer_category, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            val from = prefs.assets.first { it.id == assetId }.name
+            val to = prefs.assets.first { it.id == toAssetId }.name
+            val payee = "Transfer — $from → $to"
+            save.isEnabled = false
+            thread {
+                try {
+                    // Two legs: positive leaves the source, negative lands in the
+                    // destination. The category is excluded, so the allowance ignores both.
+                    LunchMoneyApi(prefs.token).insertTransactions(listOf(
+                        NewTxn(LocalDate.now(), amount, cat.id, payee, assetId = assetId),
+                        NewTxn(LocalDate.now(), -amount, cat.id, payee, assetId = toAssetId),
+                    ))
                     RefreshWorker.refreshNow(this)
                     runOnUiThread {
                         Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
@@ -367,10 +483,12 @@ class QuickAddActivity : Activity() {
                 val reimbId = Reimbursements.ensureCategory(api, prefs)
                 val today = LocalDate.now()
                 val txns = mutableListOf<NewTxn>()
-                if (myShare > 0) txns.add(NewTxn(today, myShare, splitCategoryId, note))
+                if (myShare > 0) {
+                    txns.add(NewTxn(today, myShare, splitCategoryId, note, assetId = assetId))
+                }
                 owed.forEach {
                     txns.add(NewTxn(today, it.amount, reimbId, note,
-                        tags = listOf(prefs.tagPrefix + it.slug)))
+                        tags = listOf(prefs.tagPrefix + it.slug), assetId = assetId))
                 }
                 val ids = api.insertTransactions(txns)
                 Reimbursements.verifyTagPrefix(
@@ -573,6 +691,8 @@ class QuickAddActivity : Activity() {
             }
         })
 
+        wireAccount(R.id.account, R.string.account_label, R.string.account_none,
+            { assetId }, { assetId = it })
         findViewById<Button>(R.id.settle_btn).setOnClickListener { saveSettle() }
 
         // Tapping an item fills exactly through it.
@@ -651,7 +771,7 @@ class QuickAddActivity : Activity() {
                 api.insertTransactions(listOf(
                     NewTxn(LocalDate.now(), -amount, reimbId,
                         "Repayment — ${displayName(p.slug)}",
-                        tags = listOf(prefs.tagPrefix + p.slug))
+                        tags = listOf(prefs.tagPrefix + p.slug), assetId = assetId)
                 ))
                 prefs.touchPerson(p.slug, displayName(p.slug))
                 RefreshWorker.refreshNow(this)
@@ -686,6 +806,8 @@ class QuickAddActivity : Activity() {
 
         val amountField = findViewById<EditText>(R.id.income_amount)
         amountField.requestFocus()
+        wireAccount(R.id.account, R.string.account_label, R.string.account_none,
+            { assetId }, { assetId = it })
 
         val save = findViewById<Button>(R.id.save_income)
         save.setOnClickListener {
@@ -704,7 +826,7 @@ class QuickAddActivity : Activity() {
             thread {
                 try {
                     LunchMoneyApi(prefs.token)
-                        .insertTransaction(LocalDate.now(), -amount, chosen.id, null)
+                        .insertTransaction(LocalDate.now(), -amount, chosen.id, null, assetId)
                     RefreshWorker.refreshNow(this)
                     runOnUiThread {
                         Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
