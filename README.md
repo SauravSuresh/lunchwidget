@@ -103,6 +103,41 @@ dependencies beyond AndroidX WorkManager.
   accounts only (Lunch Money won't accept transactions into a Plaid-linked
   one); investments sort last.
 
+## Security
+
+The API token is full read/write on your Lunch Money account, so it doesn't
+sit in plaintext anywhere:
+
+- **Sealed at rest.** The token, the people list, and the pending ledger are
+  encrypted with AES/GCM under a key generated inside the **Android Keystore**,
+  which never leaves it. `adb backup`, `run-as` on a debug build, and an offline
+  image of the flash all yield ciphertext. Values written before this shipped
+  are re-sealed in place on first read. No new dependency — it's the platform
+  Keystore through `javax.crypto`.
+- **Never re-displayed.** After you save it, Settings shows `Saved · ••••3f2a`
+  and an empty field; leave the field blank to keep the saved token, type to
+  replace it. The field itself is `textPassword` with autofill off, and Settings
+  sets `FLAG_SECURE` — no screenshots, no screen recording, no recents thumbnail.
+- **Nothing leaves the device.** `allowBackup="false"` plus data-extraction
+  rules that exclude every domain, so neither cloud backup nor Android 12+
+  device-to-device transfer copies the app's data. Quick add is
+  `exported="false"` — only the widget's own PendingIntent can open it.
+  Cleartext HTTP is already blocked by the targetSdk 34 default.
+
+One gap left by choice: the sideloaded APK is a **debug** build, so `run-as`
+and debugger attach still work if USB debugging is on and the phone is
+unlocked (the data is ciphertext either way). To close it, sign a release
+build:
+
+```sh
+keytool -genkeypair -v -keystore ~/lunchwidget.jks -alias lunchwidget \
+  -keyalg RSA -keysize 4096 -validity 10000
+./gradlew assembleRelease   # then zipalign + apksigner with that key
+```
+
+Keep the keystore — without it you can't upgrade in place, only uninstall
+and reinstall, which wipes the token and settings.
+
 ## How it works
 
 Every 4 hours — and instantly after each quick-add or a tap on ↻ — a

@@ -20,6 +20,8 @@
     <string name="no_categories">Categories not loaded yet — open settings and save first</string>
     <string name="token_label">Lunch Money API token</string>
     <string name="token_hint">from lunchmoney.app → Developers</string>
+    <string name="token_saved">Saved · ••••%s — type a new one to replace it</string>
+    <string name="token_unset">Not set</string>
     <string name="tracked_label">Tracked categories (comma-separated)</string>
     <string name="start_day_label">Budget period start day (1 = calendar month)</string>
     <string name="currency_label">Currency symbol</string>

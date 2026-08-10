@@ -20,7 +20,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/token_hint"
-            android:inputType="textNoSuggestions" />
+            android:importantForAutofill="no"
+            android:inputType="textPassword" />
+
+        <TextView
+            android:id="@+id/token_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="wrap_content"

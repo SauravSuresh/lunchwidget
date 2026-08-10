@@ -5,6 +5,8 @@
 
     <application
         android:label="@string/app_name"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:theme="@android:style/Theme.DeviceDefault.DayNight">
 
         <activity
@@ -16,9 +18,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Reached only through the widget's own PendingIntent, which carries this
+             app's identity — nothing else has any business launching it. -->
         <activity
             android:name=".QuickAddActivity"
-            android:exported="true"
+            android:exported="false"
             android:excludeFromRecents="true"
             android:theme="@style/QuickAddTheme"
             android:windowSoftInputMode="adjustResize" />

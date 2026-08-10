@@ -10,9 +10,40 @@ class Prefs(context: Context) {
     private val sp: SharedPreferences =
         context.getSharedPreferences("lunchwidget", Context.MODE_PRIVATE)
 
+    init {
+        // Reading a sealed value re-seals it if it predates encryption, but
+        // `people` is only read deep inside the split flow — it would sit in
+        // plaintext until the next split. Sweep all three once, then never again.
+        if (!sp.getBoolean("sealed_v1", false)) {
+            try {
+                token; people; pending
+            } catch (e: Exception) {
+                // Malformed legacy value: leave it, don't take the app down.
+            }
+            sp.edit().putBoolean("sealed_v1", true).apply()
+        }
+    }
+
+    // Sealed values: the token, and the people/pending ledger, which carries the
+    // real names of everyone who owes you money. Everything else in here is
+    // budget arithmetic and settings — no secret to leak.
+    private fun sealed(key: String): String {
+        val raw = sp.getString(key, "") ?: ""
+        if (raw.isEmpty()) return ""
+        val plain = Crypto.open(raw)
+        // Written before encryption shipped — seal it in place on first read.
+        if (!Crypto.isSealed(raw) && plain.isNotEmpty()) {
+            sp.edit().putString(key, Crypto.seal(plain)).apply()
+        }
+        return plain
+    }
+
+    private fun putSealed(key: String, value: String) =
+        sp.edit().putString(key, if (value.isEmpty()) "" else Crypto.seal(value)).apply()
+
     var token: String
-        get() = sp.getString("token", "") ?: ""
-        set(v) = sp.edit().putString("token", v).apply()
+        get() = sealed("token")
+        set(v) = putSealed("token", v)
 
     var trackedCategories: List<String>
         get() = (sp.getString("tracked", "Living Expenses") ?: "")
@@ -154,18 +185,17 @@ class Prefs(context: Context) {
 
     // Recency-ordered "slug|display" pairs; display names never leave the device.
     var people: List<Pair<String, String>>
-        get() = (sp.getString("people", "") ?: "").split("\n")
+        get() = sealed("people").split("\n")
             .filter { it.contains("|") }
             .map { it.substringBefore("|") to it.substringAfter("|") }
-        set(v) = sp.edit()
-            .putString("people", v.joinToString("\n") { "${it.first}|${it.second}" })
-            .apply()
+        set(v) = putSealed("people", v.joinToString("\n") { "${it.first}|${it.second}" })
 
     fun touchPerson(slug: String, display: String) {
         people = listOf(slug to display) + people.filter { it.first != slug }
     }
 
     var pending: List<PendingPerson>
-        get() = sp.getString("pending", null)?.let { SplitMath.pendingFromJson(it) } ?: emptyList()
-        set(v) = sp.edit().putString("pending", SplitMath.pendingToJson(v)).apply()
+        get() = sealed("pending").ifEmpty { null }?.let { SplitMath.pendingFromJson(it) }
+            ?: emptyList()
+        set(v) = putSealed("pending", SplitMath.pendingToJson(v))
 }

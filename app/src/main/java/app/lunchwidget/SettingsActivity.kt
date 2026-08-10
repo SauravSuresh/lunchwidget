@@ -2,16 +2,21 @@ package app.lunchwidget
 
 import android.app.Activity
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 
 class SettingsActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The token is typed on this screen — keep it out of screenshots, screen
+        // recordings, and the recents thumbnail.
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.settings)
 
         val prefs = Prefs(this)
@@ -22,7 +27,14 @@ class SettingsActivity : Activity() {
         val reimb = findViewById<EditText>(R.id.reimb)
         val defaultAsset = findViewById<Spinner>(R.id.default_asset)
 
-        token.setText(prefs.token)
+        // A saved token never goes back into the field — only the last four
+        // characters come back, enough to tell which token is loaded without
+        // putting it back on screen where it can be read or copied.
+        val savedToken = prefs.token
+        findViewById<TextView>(R.id.token_state).text =
+            if (savedToken.isEmpty()) getString(R.string.token_unset)
+            else getString(R.string.token_saved, savedToken.takeLast(4))
+
         tracked.setText(prefs.trackedCategories.joinToString(","))
         startDay.setText(prefs.startDay.toString())
         currency.setText(prefs.currency)
@@ -43,7 +55,9 @@ class SettingsActivity : Activity() {
                 startDay.error = getString(R.string.bad_day)
                 return@setOnClickListener
             }
-            prefs.token = token.text.toString().trim()
+            // Blank means "keep what's saved"; anything typed replaces it.
+            val typed = token.text.toString().trim()
+            if (typed.isNotEmpty()) prefs.token = typed
             prefs.trackedCategories = tracked.text.toString().split(",")
                 .map { it.trim() }.filter { it.isNotEmpty() }
             prefs.startDay = day
