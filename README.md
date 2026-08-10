@@ -57,6 +57,11 @@ transaction posts; the ledger *is* Lunch Money, the widget stores nothing.
 General income takes the same `+` path into your income categories. Full
 design: [docs/spec-income-split.md](docs/spec-income-split.md).
 
+Moving money between your own accounts is the third chip, `⇄`: amount, from,
+to. It posts two transactions into Lunch Money's own `Payment, Transfer`
+category, which already excludes itself from budget and totals — so a transfer
+never moves the daily number.
+
 ## Nothing style
 
 I use a Nothing phone, so the widget dresses like it belongs there: OLED
@@ -92,6 +97,11 @@ dependencies beyond AndroidX WorkManager.
 - **Reimbursements category** — default `Reimbursements`; looked up by name at
   the first split and created (excluded from budget and totals) if missing.
   Point it at an existing category to reuse it — its exclude flags get fixed.
+- **Default account for quick add** — which Lunch Money account a new
+  transaction lands in. Every screen that posts money has an `ACCOUNT` chip
+  seeded from this, so the default is a starting point, not a lock. Manual
+  accounts only (Lunch Money won't accept transactions into a Plaid-linked
+  one); investments sort last.
 
 ## How it works
 
