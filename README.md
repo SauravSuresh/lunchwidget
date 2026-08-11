@@ -53,6 +53,11 @@ sorted by what you've used recently) → save. The transaction posts to Lunch
 Money, the allowance recomputes, and the bar moves — immediately. Logging an
 expense costs about four seconds, which is cheap enough to actually do.
 
+Note and tags are optional. The tag field is comma-separated and autocompletes
+against the tags already in your Lunch Money, so a typo doesn't quietly create a
+new one; the `owed:<person>` tags the split flow manages are kept out of the
+list. Tags ride along onto every share of a split.
+
 <p>
   <img src="Screenshots/quickadd-1-empty.png" width="200" alt="Quick add dialog, empty">
   <img src="Screenshots/quickadd-2-filled.png" width="200" alt="Quick add dialog with an amount and a note">

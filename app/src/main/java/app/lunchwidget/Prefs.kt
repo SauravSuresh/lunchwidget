@@ -136,6 +136,12 @@ class Prefs(context: Context) {
             sp.edit().putString("categories", arr.toString()).apply()
         }
 
+    // Existing tag names, for the quick-add picker. Newline-joined: tag names can
+    // contain commas, which is what the field itself separates on.
+    var tags: List<String>
+        get() = (sp.getString("tags", "") ?: "").split("\n").filter { it.isNotBlank() }
+        set(v) = sp.edit().putString("tags", v.joinToString("\n")).apply()
+
     // --- accounts ---
 
     var assets: List<Asset>

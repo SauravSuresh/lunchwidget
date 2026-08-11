@@ -148,6 +148,22 @@
             android:textColorHint="#5A5A5A"
             android:textSize="15sp" />
 
+        <MultiAutoCompleteTextView
+            android:id="@+id/tags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/field_bg"
+            android:completionThreshold="1"
+            android:hint="@string/tags_hint"
+            android:imeOptions="actionDone"
+            android:inputType="text"
+            android:padding="14dp"
+            android:popupBackground="#141414"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#5A5A5A"
+            android:textSize="15sp" />
+
         <TextView
             android:id="@+id/split"
             android:layout_width="match_parent"

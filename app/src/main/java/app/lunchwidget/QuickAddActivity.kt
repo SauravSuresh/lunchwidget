@@ -16,6 +16,7 @@ import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.MultiAutoCompleteTextView
 import android.widget.TextView
 import android.widget.Toast
 import java.time.LocalDate
@@ -43,6 +44,7 @@ class QuickAddActivity : Activity() {
     private var entryAmountText = ""
     private var entryCategoryText = ""
     private var entryNoteText = ""
+    private var entryTagsText = ""
 
     // Account the money left or landed in. Also the FROM side of a transfer.
     private var assetId = 0L
@@ -138,6 +140,12 @@ class QuickAddActivity : Activity() {
     } catch (e: Exception) {
         iso
     }
+
+    // Lunch Money creates tag names on insert, so a typo silently makes a new
+    // tag. The field autocompletes against the ones you already have to keep
+    // that from happening.
+    private fun typedTags(): List<String> =
+        entryTagsText.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
     private fun chipOn(tv: TextView, on: Boolean) {
         tv.setBackgroundResource(if (on) R.drawable.chip_on else R.drawable.chip)
@@ -247,6 +255,15 @@ class QuickAddActivity : Activity() {
         amountField.setText(entryAmountText)
         noteField.setText(entryNoteText)
 
+        val tagsField = findViewById<MultiAutoCompleteTextView>(R.id.tags)
+        // owed:<person> tags are written by the split flow and read back as the
+        // pending ledger — they aren't yours to pick, so keep them out of the list.
+        val pickable = prefs.tags.filterNot { it.startsWith(prefs.tagPrefix) }
+        tagsField.setAdapter(ArrayAdapter(this, R.layout.dropdown_item, pickable))
+        // Autocomplete each comma-separated token rather than the whole field.
+        tagsField.setTokenizer(MultiAutoCompleteTextView.CommaTokenizer())
+        tagsField.setText(entryTagsText)
+
         val title = findViewById<TextView>(R.id.title)
         val minus = findViewById<TextView>(R.id.sign_minus)
         val plusBtn = findViewById<TextView>(R.id.sign_plus)
@@ -299,6 +316,7 @@ class QuickAddActivity : Activity() {
             entryAmountText = amountField.text.toString()
             entryCategoryText = category.text.toString()
             entryNoteText = noteField.text.toString()
+            entryTagsText = tagsField.text.toString()
         }
 
         fun validExpense(): Category? {
@@ -325,9 +343,13 @@ class QuickAddActivity : Activity() {
         val save = findViewById<Button>(R.id.save)
         save.setOnClickListener {
             val chosen = validExpense() ?: return@setOnClickListener
+            stashEntry()
             val amount = amountField.text.toString().toDouble()
             val note = noteField.text.toString()
-            val txn = NewTxn(entryDate, amount, chosen.id, note, assetId = assetId)
+            val txn = NewTxn(
+                entryDate, amount, chosen.id, note,
+                tags = typedTags(), assetId = assetId,
+            )
             showUndo(getString(R.string.added_amount, money(amount))) {
                 PostWorker.enqueue(applicationContext, listOf(txn))
             }
@@ -526,14 +548,20 @@ class QuickAddActivity : Activity() {
         val note = entryNoteText
         val myShare = if (includeMe) me.amount else 0.0
         val owed = friends.filter { it.amount > 0 }
+        val tags = typedTags()
         val txns = mutableListOf<NewTxn>()
         if (myShare > 0) {
-            txns.add(NewTxn(entryDate, myShare, splitCategoryId, note, assetId = assetId))
+            txns.add(
+                NewTxn(entryDate, myShare, splitCategoryId, note,
+                    tags = tags, assetId = assetId)
+            )
         }
+        // The owed portions are the same bill, so they carry the same tags —
+        // with the person's owed: tag in front, where verifyTagPrefix expects it.
         owed.forEach {
             txns.add(
                 NewTxn(entryDate, it.amount, PostWorker.REIMBURSEMENTS, note,
-                    tags = listOf(prefs.tagPrefix + it.slug), assetId = assetId)
+                    tags = listOf(prefs.tagPrefix + it.slug) + tags, assetId = assetId)
             )
         }
         // Recency is a local nicety — record it now, whether or not the post lands.

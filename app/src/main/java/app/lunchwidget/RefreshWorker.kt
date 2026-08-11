@@ -20,6 +20,13 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
             val categories = api.categories()
             prefs.categories = categories
             prefs.assets = api.assets()
+            // The picker list is a convenience; the allowance is the product. A
+            // tags outage must not send the widget to STALE.
+            try {
+                prefs.tags = api.tags()
+            } catch (e: Exception) {
+                // keep whatever was cached
+            }
             val today = LocalDate.now()
             val (start, end) = Allowance.period(today, prefs.startDay)
             val trackedIds = Allowance.trackedIds(categories, prefs.trackedCategories)

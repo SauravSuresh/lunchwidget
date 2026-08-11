@@ -46,6 +46,19 @@ class LunchMoneyApi(private val token: String) {
         }
     }
 
+    // Existing tag names, for the quick-add picker. Archived ones are hidden in
+    // Lunch Money's own UI, so they don't belong in a type-to-search list either.
+    // v1 returns a bare array; tolerate a wrapped one rather than break on it.
+    fun tags(): List<String> {
+        val body = request("GET", "/tags")
+        val arr = if (body.trimStart().startsWith("[")) JSONArray(body)
+        else JSONObject(body).optJSONArray("tags") ?: JSONArray()
+        return (0 until arr.length()).mapNotNull { i ->
+            val o = arr.getJSONObject(i)
+            if (o.optBoolean("archived", false)) null else o.optString("name").ifBlank { null }
+        }.sortedBy { it.lowercase() }
+    }
+
     fun createCategory(name: String): Long {
         val body = JSONObject()
             .put("name", name)
