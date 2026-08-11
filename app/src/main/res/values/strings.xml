@@ -13,7 +13,6 @@
     <string name="bad_category">Pick a category from the list</string>
     <string name="note_hint">Note (optional)</string>
     <string name="save">SAVE</string>
-    <string name="added">Added</string>
     <string name="bad_amount">Enter an amount</string>
     <string name="bad_day">1–31</string>
     <string name="saved">Saved</string>
@@ -79,4 +78,11 @@
     <string name="same_account">Pick two different accounts</string>
     <string name="pick_both_accounts">Pick both accounts</string>
     <string name="no_transfer_category">No transfer category in Lunch Money — add one there first</string>
+    <string name="date_label">DATE · %s</string>
+    <string name="today_label">TODAY</string>
+    <string name="yesterday_label">YESTERDAY</string>
+    <string name="date_entry_label">Show the date picker on quick add</string>
+    <string name="added_amount">ADDED %s</string>
+    <string name="undo">UNDO</string>
+    <string name="undone">Not added</string>
 </resources>

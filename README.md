@@ -97,6 +97,10 @@ dependencies beyond AndroidX WorkManager.
 - **Reimbursements category** — default `Reimbursements`; looked up by name at
   the first split and created (excluded from budget and totals) if missing.
   Point it at an existing category to reuse it — its exclude flags get fixed.
+- **Show the date picker on quick add** — default on. A `DATE · TODAY` chip on
+  every entry screen, tap to backfill (future dates are blocked). Turn it off and
+  the chip disappears everywhere and everything posts today — this is a quick add
+  first, and most adds are for right now.
 - **Default account for quick add** — which Lunch Money account a new
   transaction lands in. Every screen that posts money has an `ACCOUNT` chip
   seeded from this, so the default is a starting point, not a lock. Manual
@@ -143,8 +147,16 @@ and reinstall, which wipes the token and settings.
 Every 4 hours — and instantly after each quick-add or a tap on ↻ — a
 WorkManager job pulls categories, budgets, and the period's transactions,
 recomputes the allowance, caches a snapshot, and redraws the widget. Offline
-it renders the last snapshot with a STALE marker. Quick-adds post as
-reviewed (cleared) transactions dated today.
+it renders the last snapshot with a STALE marker.
+
+Writes go through WorkManager too. Pressing save shows a one-line receipt with
+**UNDO** for four seconds; nothing has reached Lunch Money yet, so undo simply
+drops it (the v1 API can't delete a transaction, so a real undo has to be one
+that never sent). When the window closes the transaction is queued with a
+network constraint and exponential backoff — log an expense in a lift and it
+posts itself when there's signal. Leaving the dialog commits; only UNDO
+cancels. Transactions post as reviewed (cleared), dated today unless you pick
+another date.
 
 ```sh
 ./gradlew test   # unit tests for the allowance math

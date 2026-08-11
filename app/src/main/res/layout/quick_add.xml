@@ -103,17 +103,37 @@
             android:textColorHint="#5A5A5A"
             android:textSize="15sp" />
 
-        <TextView
-            android:id="@+id/account"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/field_bg"
-            android:fontFamily="@font/space_mono"
-            android:letterSpacing="0.08"
-            android:padding="14dp"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/date"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/field_bg"
+                android:fontFamily="@font/space_mono"
+                android:letterSpacing="0.08"
+                android:padding="14dp"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/account"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/field_bg"
+                android:fontFamily="@font/space_mono"
+                android:letterSpacing="0.08"
+                android:padding="14dp"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp" />
+        </LinearLayout>
 
         <EditText
             android:id="@+id/note"
@@ -249,10 +269,22 @@
             android:background="#2A2A2A" />
 
         <TextView
-            android:id="@+id/transfer_from"
+            android:id="@+id/transfer_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
+            android:background="@drawable/field_bg"
+            android:fontFamily="@font/space_mono"
+            android:letterSpacing="0.08"
+            android:padding="14dp"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/transfer_from"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:background="@drawable/field_bg"
             android:fontFamily="@font/space_mono"
             android:letterSpacing="0.08"

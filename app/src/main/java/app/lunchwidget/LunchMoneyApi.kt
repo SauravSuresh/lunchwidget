@@ -154,16 +154,6 @@ class LunchMoneyApi(private val token: String) {
         return out
     }
 
-    fun insertTransaction(
-        date: LocalDate,
-        amount: Double,
-        categoryId: Long,
-        note: String?,
-        assetId: Long = 0L,
-    ) {
-        insertTransactions(listOf(NewTxn(date, amount, categoryId, note, assetId = assetId)))
-    }
-
     // Batch insert; returns the new transaction ids. Tag names auto-create (v1).
     fun insertTransactions(txns: List<NewTxn>): List<Long> {
         val arr = JSONArray()

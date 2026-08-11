@@ -160,6 +160,12 @@ class Prefs(context: Context) {
         get() = sp.getLong("default_asset", 0L)
         set(v) = sp.edit().putLong("default_asset", v).apply()
 
+    // Off hides the date chip everywhere and everything posts today — this is a
+    // quick add first, and most adds are for right now.
+    var dateEntry: Boolean
+        get() = sp.getBoolean("date_entry", true)
+        set(v) = sp.edit().putBoolean("date_entry", v).apply()
+
     // --- income / split / repayment (docs/spec-income-split.md) ---
 
     var reimbName: String

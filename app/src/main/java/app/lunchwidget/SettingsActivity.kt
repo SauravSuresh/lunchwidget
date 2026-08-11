@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
@@ -26,6 +27,8 @@ class SettingsActivity : Activity() {
         val currency = findViewById<EditText>(R.id.currency)
         val reimb = findViewById<EditText>(R.id.reimb)
         val defaultAsset = findViewById<Spinner>(R.id.default_asset)
+        val dateEntry = findViewById<CheckBox>(R.id.date_entry)
+        dateEntry.isChecked = prefs.dateEntry
 
         // A saved token never goes back into the field — only the last four
         // characters come back, enough to tell which token is loaded without
@@ -63,6 +66,7 @@ class SettingsActivity : Activity() {
             prefs.startDay = day
             prefs.currency = currency.text.toString().ifBlank { "₹" }
             prefs.defaultAssetId = assets.getOrNull(defaultAsset.selectedItemPosition - 1)?.id ?: 0L
+            prefs.dateEntry = dateEntry.isChecked
             val reimbName = reimb.text.toString().trim().ifBlank { "Reimbursements" }
             if (!reimbName.equals(prefs.reimbName, ignoreCase = true)) {
                 prefs.reimbCategoryId = 0L // re-resolve on next split

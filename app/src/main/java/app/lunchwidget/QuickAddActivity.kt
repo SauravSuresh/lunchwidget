@@ -2,8 +2,11 @@ package app.lunchwidget
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
@@ -18,11 +21,10 @@ import android.widget.Toast
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.concurrent.thread
 
 class QuickAddActivity : Activity() {
 
-    private enum class Screen { ENTRY, SPLIT, ITEMIZE, PERSONS, SETTLE, INCOME }
+    private enum class Screen { ENTRY, SPLIT, ITEMIZE, PERSONS, SETTLE, INCOME, UNDO }
 
     // One receipt line being edited on the itemize screen.
     private class UiItem(
@@ -45,6 +47,16 @@ class QuickAddActivity : Activity() {
     // Account the money left or landed in. Also the FROM side of a transfer.
     private var assetId = 0L
     private var toAssetId = 0L
+
+    // Date every transaction from this dialog carries. Hidden and pinned to today
+    // when the date picker is switched off in settings.
+    private var entryDate: LocalDate = LocalDate.now()
+
+    // The post is held for UNDO_MS so UNDO can drop it before it ever reaches the
+    // network — Lunch Money's v1 API has no way to delete a transaction, so the
+    // only honest undo is one that hasn't sent yet.
+    private val undoTimer = Handler(Looper.getMainLooper())
+    private var pendingPost: (() -> Unit)? = null
 
     // Split state.
     private val me = Share("", "You", isMe = true)
@@ -78,8 +90,40 @@ class QuickAddActivity : Activity() {
             Screen.SPLIT, Screen.PERSONS, Screen.INCOME -> showEntry()
             Screen.ITEMIZE -> showSplit()
             Screen.SETTLE -> showPersons()
-            Screen.ENTRY -> @Suppress("DEPRECATION") super.onBackPressed()
+            Screen.ENTRY, Screen.UNDO -> @Suppress("DEPRECATION") super.onBackPressed()
         }
+    }
+
+    // Leaving commits. You already pressed save; UNDO is the only thing that cancels,
+    // so dismissing the dialog or going home must not silently drop the transaction.
+    override fun onPause() {
+        super.onPause()
+        undoTimer.removeCallbacksAndMessages(null)
+        flushPost()
+    }
+
+    private fun flushPost() {
+        val post = pendingPost ?: return
+        pendingPost = null
+        post()
+    }
+
+    /**
+     * Swap the dialog for a one-line receipt with an UNDO button, then send [post]
+     * when the window closes. Nothing has been written to Lunch Money yet.
+     */
+    private fun showUndo(label: String, post: () -> Unit) {
+        screen = Screen.UNDO
+        pendingPost = post
+        setContentView(R.layout.undo)
+        findViewById<TextView>(R.id.undo_label).text = label
+        findViewById<TextView>(R.id.undo_btn).setOnClickListener {
+            pendingPost = null
+            undoTimer.removeCallbacksAndMessages(null)
+            Toast.makeText(this, R.string.undone, Toast.LENGTH_SHORT).show()
+            finish()
+        }
+        undoTimer.postDelayed({ flushPost(); finish() }, UNDO_MS)
     }
 
     private fun fmtA(v: Double): String =
@@ -130,6 +174,36 @@ class QuickAddActivity : Activity() {
                     render()
                 }
                 .show()
+        }
+        render()
+    }
+
+    // Tap-to-pick date. Absent entirely when the setting is off, which pins every
+    // transaction to today — the quick-add default.
+    private fun wireDate(viewId: Int) {
+        val chip = findViewById<TextView>(viewId)
+        if (!prefs.dateEntry) {
+            chip.visibility = View.GONE
+            return
+        }
+        fun render() {
+            val today = LocalDate.now()
+            val label = when (entryDate) {
+                today -> getString(R.string.today_label)
+                today.minusDays(1) -> getString(R.string.yesterday_label)
+                else -> entryDate.format(DateTimeFormatter.ofPattern("dd MMM")).uppercase(Locale.US)
+            }
+            chip.text = getString(R.string.date_label, label)
+        }
+        chip.setOnClickListener {
+            DatePickerDialog(
+                this,
+                { _, y, m, d -> entryDate = LocalDate.of(y, m + 1, d); render() },
+                entryDate.year, entryDate.monthValue - 1, entryDate.dayOfMonth,
+            ).apply {
+                // Backfilling is the point; scheduling isn't.
+                datePicker.maxDate = System.currentTimeMillis()
+            }.show()
         }
         render()
     }
@@ -186,6 +260,7 @@ class QuickAddActivity : Activity() {
 
         wireAccount(R.id.account, R.string.account_label, R.string.account_none,
             { assetId }, { assetId = it })
+        wireDate(R.id.date)
 
         fun applySign() {
             title.setText(
@@ -252,22 +327,9 @@ class QuickAddActivity : Activity() {
             val chosen = validExpense() ?: return@setOnClickListener
             val amount = amountField.text.toString().toDouble()
             val note = noteField.text.toString()
-            save.isEnabled = false
-            thread {
-                try {
-                    LunchMoneyApi(prefs.token)
-                        .insertTransaction(LocalDate.now(), amount, chosen.id, note, assetId)
-                    RefreshWorker.refreshNow(this)
-                    runOnUiThread {
-                        Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-                        save.isEnabled = true
-                    }
-                }
+            val txn = NewTxn(entryDate, amount, chosen.id, note, assetId = assetId)
+            showUndo(getString(R.string.added_amount, money(amount))) {
+                PostWorker.enqueue(applicationContext, listOf(txn))
             }
         }
     }
@@ -279,6 +341,7 @@ class QuickAddActivity : Activity() {
             { assetId }, { assetId = it })
         wireAccount(R.id.transfer_to, R.string.transfer_to, R.string.transfer_to_none,
             { toAssetId }, { toAssetId = it })
+        wireDate(R.id.transfer_date)
 
         val amountField = findViewById<EditText>(R.id.transfer_amount)
         val save = findViewById<Button>(R.id.save_transfer)
@@ -307,26 +370,14 @@ class QuickAddActivity : Activity() {
             val from = prefs.assets.first { it.id == assetId }.name
             val to = prefs.assets.first { it.id == toAssetId }.name
             val payee = "Transfer — $from → $to"
-            save.isEnabled = false
-            thread {
-                try {
-                    // Two legs: positive leaves the source, negative lands in the
-                    // destination. The category is excluded, so the allowance ignores both.
-                    LunchMoneyApi(prefs.token).insertTransactions(listOf(
-                        NewTxn(LocalDate.now(), amount, cat.id, payee, assetId = assetId),
-                        NewTxn(LocalDate.now(), -amount, cat.id, payee, assetId = toAssetId),
-                    ))
-                    RefreshWorker.refreshNow(this)
-                    runOnUiThread {
-                        Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-                        save.isEnabled = true
-                    }
-                }
+            // Two legs: positive leaves the source, negative lands in the
+            // destination. The category is excluded, so the allowance ignores both.
+            val legs = listOf(
+                NewTxn(entryDate, amount, cat.id, payee, assetId = assetId),
+                NewTxn(entryDate, -amount, cat.id, payee, assetId = toAssetId),
+            )
+            showUndo(getString(R.string.added_amount, money(amount))) {
+                PostWorker.enqueue(applicationContext, legs)
             }
         }
     }
@@ -472,42 +523,27 @@ class QuickAddActivity : Activity() {
             Toast.makeText(this, R.string.need_people, Toast.LENGTH_SHORT).show()
             return
         }
-        val save = findViewById<Button>(R.id.save_split)
-        save.isEnabled = false
         val note = entryNoteText
         val myShare = if (includeMe) me.amount else 0.0
         val owed = friends.filter { it.amount > 0 }
-        thread {
-            try {
-                val api = LunchMoneyApi(prefs.token)
-                val reimbId = Reimbursements.ensureCategory(api, prefs)
-                val today = LocalDate.now()
-                val txns = mutableListOf<NewTxn>()
-                if (myShare > 0) {
-                    txns.add(NewTxn(today, myShare, splitCategoryId, note, assetId = assetId))
-                }
-                owed.forEach {
-                    txns.add(NewTxn(today, it.amount, reimbId, note,
-                        tags = listOf(prefs.tagPrefix + it.slug), assetId = assetId))
-                }
-                val ids = api.insertTransactions(txns)
-                Reimbursements.verifyTagPrefix(
-                    api, prefs,
-                    ids.drop(if (myShare > 0) 1 else 0),
-                    owed.map { it.slug },
-                )
-                owed.forEach { prefs.touchPerson(it.slug, it.display) }
-                RefreshWorker.refreshNow(this)
-                runOnUiThread {
-                    Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-                    save.isEnabled = true
-                }
-            }
+        val txns = mutableListOf<NewTxn>()
+        if (myShare > 0) {
+            txns.add(NewTxn(entryDate, myShare, splitCategoryId, note, assetId = assetId))
+        }
+        owed.forEach {
+            txns.add(
+                NewTxn(entryDate, it.amount, PostWorker.REIMBURSEMENTS, note,
+                    tags = listOf(prefs.tagPrefix + it.slug), assetId = assetId)
+            )
+        }
+        // Recency is a local nicety — record it now, whether or not the post lands.
+        owed.forEach { prefs.touchPerson(it.slug, it.display) }
+        showUndo(getString(R.string.added_amount, money(splitTotal))) {
+            PostWorker.enqueue(
+                applicationContext, txns,
+                slugs = owed.map { it.slug },
+                tagOffset = if (myShare > 0) 1 else 0,
+            )
         }
     }
 
@@ -693,6 +729,7 @@ class QuickAddActivity : Activity() {
 
         wireAccount(R.id.account, R.string.account_label, R.string.account_none,
             { assetId }, { assetId = it })
+        wireDate(R.id.date)
         findViewById<Button>(R.id.settle_btn).setOnClickListener { saveSettle() }
 
         // Tapping an item fills exactly through it.
@@ -762,29 +799,14 @@ class QuickAddActivity : Activity() {
     private fun saveSettle() {
         val p = settlePerson ?: return
         val amount = received
-        val btn = findViewById<Button>(R.id.settle_btn)
-        btn.isEnabled = false
-        thread {
-            try {
-                val api = LunchMoneyApi(prefs.token)
-                val reimbId = Reimbursements.ensureCategory(api, prefs)
-                api.insertTransactions(listOf(
-                    NewTxn(LocalDate.now(), -amount, reimbId,
-                        "Repayment — ${displayName(p.slug)}",
-                        tags = listOf(prefs.tagPrefix + p.slug), assetId = assetId)
-                ))
-                prefs.touchPerson(p.slug, displayName(p.slug))
-                RefreshWorker.refreshNow(this)
-                runOnUiThread {
-                    Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-                    btn.isEnabled = true
-                }
-            }
+        val txn = NewTxn(
+            entryDate, -amount, PostWorker.REIMBURSEMENTS,
+            "Repayment — ${displayName(p.slug)}",
+            tags = listOf(prefs.tagPrefix + p.slug), assetId = assetId,
+        )
+        prefs.touchPerson(p.slug, displayName(p.slug))
+        showUndo(getString(R.string.added_amount, money(amount))) {
+            PostWorker.enqueue(applicationContext, listOf(txn))
         }
     }
 
@@ -808,6 +830,7 @@ class QuickAddActivity : Activity() {
         amountField.requestFocus()
         wireAccount(R.id.account, R.string.account_label, R.string.account_none,
             { assetId }, { assetId = it })
+        wireDate(R.id.date)
 
         val save = findViewById<Button>(R.id.save_income)
         save.setOnClickListener {
@@ -822,23 +845,16 @@ class QuickAddActivity : Activity() {
                 category.error = getString(R.string.bad_category)
                 return@setOnClickListener
             }
-            save.isEnabled = false
-            thread {
-                try {
-                    LunchMoneyApi(prefs.token)
-                        .insertTransaction(LocalDate.now(), -amount, chosen.id, null, assetId)
-                    RefreshWorker.refreshNow(this)
-                    runOnUiThread {
-                        Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
-                        save.isEnabled = true
-                    }
-                }
+            val txn = NewTxn(entryDate, -amount, chosen.id, null, assetId = assetId)
+            showUndo(getString(R.string.added_amount, money(amount))) {
+                PostWorker.enqueue(applicationContext, listOf(txn))
             }
         }
+    }
+
+    companion object {
+        // Long enough to catch a fat-fingered amount, short enough not to feel like
+        // a confirmation step — the widget's whole point is four-second logging.
+        private const val UNDO_MS = 4000L
     }
 }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_bg"
+    android:gravity="center_vertical"
+    android:minWidth="320dp"
+    android:orientation="horizontal"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/undo_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="@font/space_mono"
+        android:letterSpacing="0.08"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/undo_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/chip_on"
+        android:fontFamily="@font/space_mono_bold"
+        android:gravity="center"
+        android:letterSpacing="0.08"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:text="@string/undo"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp" />
+</LinearLayout>
