@@ -112,7 +112,7 @@
             <TextView
                 android:id="@+id/date"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/field_bg"
@@ -125,7 +125,7 @@
             <TextView
                 android:id="@+id/account"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/field_bg"
                 android:fontFamily="@font/space_mono"
