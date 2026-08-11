@@ -13,13 +13,15 @@ class PostWorkerCodecTest {
 
     @Test
     fun roundTripsEveryField() {
+        // Ids and names here are invented — this repo is public, so fixtures never
+        // carry real category ids, asset ids, or anyone's name.
         val txns = listOf(
-            // A backdated split share: note, no tags, real category, an account.
+            // A backdated split share: note, no tags, an ordinary category, an account.
             NewTxn(LocalDate.of(2026, 8, 3), 249.5, 1001L, "dinner", assetId = 2002L),
             // An owed portion: placeholder category the worker resolves, tagged.
             NewTxn(
                 LocalDate.of(2026, 8, 3), 500.0, PostWorker.REIMBURSEMENTS, "dinner",
-                tags = listOf("owed:casey-blake"), assetId = 2002L,
+                tags = listOf("owed:example-person"), assetId = 2002L,
             ),
             // A repayment: negative, no note, no account.
             NewTxn(LocalDate.of(2026, 8, 11), -500.0, PostWorker.REIMBURSEMENTS, null),
