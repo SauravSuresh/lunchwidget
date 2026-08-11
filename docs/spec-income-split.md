@@ -1,9 +1,26 @@
 # Spec: income, split bills & repayment matching
 
-Consolidates the decisions from the [wayfinder map](https://github.com/SauravSuresh/lunchwidget/issues/1)
-(tickets #2–#6). Vocabulary per [CONTEXT.md](../CONTEXT.md). Prototypes (primary sources):
-branches `prototype/split-editor` (receipt variant C won) and `prototype/income-flow`
+Consolidates the decisions from the wayfinder map charted 2026-08-07 (since retired
+from the issue tracker; this document is now the record). Vocabulary per
+[CONTEXT.md](../CONTEXT.md). Prototypes (primary sources): branches
+`prototype/split-editor` (receipt variant C won) and `prototype/income-flow`
 (waterline variant B won).
+
+## 0. Verified API constraints
+
+Checked against the live v1 API on 2026-08-07. These are why the data model below
+looks the way it does — re-verify before designing around any of them again.
+
+- Tags **are** writable on `POST /v1/transactions` (names or ids), and tag names
+  auto-create on insert.
+- Native splits are **not** creatable at insert: it's `POST` then `PUT` with `split`.
+  Split children cannot carry tags — which is what rules native splits out here.
+- A transaction cannot be both a split and part of a transaction group.
+- `exclude_from_budget`, `exclude_from_totals` and `is_income` are **category-level
+  only**. There is no per-transaction flag.
+- Lunch Money has no native repayment↔expense matching.
+- The official Lunch Money reimbursement pattern is exactly the one used here: the
+  owed portion goes to a category excluded from budget and totals.
 
 ## 1. What's being added
 
@@ -126,7 +143,7 @@ quick-add. Then `RefreshWorker.refreshNow`.
 
 ## 7. Pending computation
 
-Per the [query-mechanics research](https://github.com/SauravSuresh/lunchwidget/issues/3)
+Per the query-mechanics research (branch `research/pending-owed-query`)
 (full doc on branch `research/pending-owed-query`):
 
 - Once per refresh (4-hourly + after every quick-add/settle):
