@@ -8,6 +8,17 @@ Built as a companion to [dailyspend](https://github.com/SauravSuresh/dailyspend)
 which computes the same number server-side and drops it into Todoist every
 morning. This widget computes it on-device, live.
 
+<p>
+  <img src="Screenshots/widget-1-fresh.png" width="200" alt="Widget at the start of the day, full allowance">
+  <img src="Screenshots/widget-2-half.png" width="200" alt="Widget half spent, bar filling white">
+  <img src="Screenshots/widget-3-caution.png" width="200" alt="Widget past 70 percent, bar amber">
+  <img src="Screenshots/widget-4-over.png" width="200" alt="Widget over today's limit, negative number in red">
+</p>
+
+The bar fills as the day goes: white while there's room, amber past 70%, red
+once today is blown and the hero number goes negative. Tomorrow quietly shrinks
+to compensate.
+
 ## The philosophy: a daily number, not a monthly one
 
 Lunch Money budgets monthly. But nobody overspends a month at a time — you
@@ -42,6 +53,11 @@ sorted by what you've used recently) → save. The transaction posts to Lunch
 Money, the allowance recomputes, and the bar moves — immediately. Logging an
 expense costs about four seconds, which is cheap enough to actually do.
 
+<p>
+  <img src="Screenshots/quickadd-1-empty.png" width="200" alt="Quick add dialog, empty">
+  <img src="Screenshots/quickadd-2-filled.png" width="200" alt="Quick add dialog with an amount and a note">
+</p>
+
 ## Splits and money coming back
 
 Group bills get a receipt-style split step: pick people (typed, remembered, or
@@ -49,6 +65,15 @@ from contacts), shares split equally, edit any share and the rest snap to
 rebalance. Only **your** share counts against today's number — the rest posts
 to an excluded Reimbursements category in Lunch Money, tagged per person
 (`owed:alex`), so friends' portions never pollute your budget.
+
+<p>
+  <img src="Screenshots/split-1-solo.png" width="200" alt="Split step before anyone is added">
+  <img src="Screenshots/split-2-equal.png" width="200" alt="Split across four people, shares equal">
+  <img src="Screenshots/split-3-edited.png" width="200" alt="Split after editing shares, the rest snapped to rebalance">
+</p>
+
+Left to right: the split step as it opens, four ways equally, then after
+editing — locked rows hold and the unlocked ones snap to absorb the difference.
 
 When someone pays you back, flip the quick-add to `+`: pick the person, enter
 what you received, and the amount pours over their pending items oldest-first —
