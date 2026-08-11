@@ -143,8 +143,8 @@ quick-add. Then `RefreshWorker.refreshNow`.
 
 ## 7. Pending computation
 
-Per the query-mechanics research (branch `research/pending-owed-query`)
-(full doc on branch `research/pending-owed-query`):
+Per the query-mechanics research (full doc: `docs/research/pending-owed-query.md`
+on branch `research/pending-owed-query`):
 
 - Once per refresh (4-hourly + after every quick-add/settle):
   `GET /v1/transactions?category_id={reimbursements}&start_date={owed_since}&end_date={today}&limit=500&offset=…`,
