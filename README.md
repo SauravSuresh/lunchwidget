@@ -80,6 +80,11 @@ to an excluded Reimbursements category in Lunch Money, tagged per person
 Left to right: the split step as it opens, four ways equally, then after
 editing — locked rows hold and the unlocked ones snap to absorb the difference.
 
+Saving a split also drops a pasteable summary on the clipboard — the note and
+total, then a `name: amount` line per person — because the next stop is usually
+GPay or Splitwise, where the same shares would otherwise be re-typed from
+memory.
+
 When someone pays you back, flip the quick-add to `+`: pick the person, enter
 what you received, and the amount pours over their pending items oldest-first —
 partial payments just leave the remainder pending. One negative tagged

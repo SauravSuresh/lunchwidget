@@ -84,6 +84,7 @@
     <string name="yesterday_label">YESTERDAY</string>
     <string name="date_entry_label">Show the date picker on quick add</string>
     <string name="added_amount">ADDED %s</string>
+    <string name="split_copied">SPLIT COPIED — PASTE ANYWHERE</string>
     <string name="undo">UNDO</string>
     <string name="undone">Not added</string>
 </resources>
