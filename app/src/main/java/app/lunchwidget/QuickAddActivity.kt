@@ -580,17 +580,25 @@ class QuickAddActivity : Activity() {
     }
 
     // The next stop after saving a split is GPay/Splitwise, where the same
-    // shares get re-entered by hand — so hand them over as one pasteable
-    // clip: note · total, then a name: amount line per person.
+    // shares get re-entered by hand — so hand them over via the clipboard.
+    // Each distinct amount is copied on its own first: the system keeps only
+    // the last clip as primary, but keyboard clipboard history (Gboard) keeps
+    // every one, so single amounts can be pasted straight into amount fields.
+    // The summary block goes last and stays primary: note · total, then a
+    // name: amount line per person.
     private fun copySplitSummary() {
+        val cm = getSystemService(ClipboardManager::class.java)
+        val amounts = (friends.map { it.amount } +
+            (if (includeMe) listOf(me.amount) else emptyList()) +
+            splitTotal).filter { it > 0 }.distinct()
+        amounts.forEach { cm.setPrimaryClip(ClipData.newPlainText("share", fmtA(it))) }
         val text = buildString {
             append(entryNoteText.ifBlank { getString(R.string.split_receipt) })
             append(" · ").append(fmtA(splitTotal))
             if (includeMe) append('\n').append("You: ").append(fmtA(me.amount))
             for (f in friends) append('\n').append(f.display).append(": ").append(fmtA(f.amount))
         }
-        getSystemService(ClipboardManager::class.java)
-            .setPrimaryClip(ClipData.newPlainText("split", text))
+        cm.setPrimaryClip(ClipData.newPlainText("split", text))
         // Android 13+ shows its own "copied" overlay; only speak up below that.
         if (Build.VERSION.SDK_INT < 33) {
             Toast.makeText(this, R.string.split_copied, Toast.LENGTH_SHORT).show()

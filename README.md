@@ -83,7 +83,9 @@ editing — locked rows hold and the unlocked ones snap to absorb the difference
 Saving a split also drops a pasteable summary on the clipboard — the note and
 total, then a `name: amount` line per person — because the next stop is usually
 GPay or Splitwise, where the same shares would otherwise be re-typed from
-memory.
+memory. Each distinct amount is copied individually first, so a keyboard with
+clipboard history (Gboard) holds every share as its own pasteable entry, ready
+for amount fields.
 
 When someone pays you back, flip the quick-add to `+`: pick the person, enter
 what you received, and the amount pours over their pending items oldest-first —
