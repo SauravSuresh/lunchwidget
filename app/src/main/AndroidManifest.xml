@@ -27,6 +27,18 @@
             android:theme="@style/QuickAddTheme"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Hands the camera app a cacheDir target for the receipt photo; the
+             file is deleted right after OCR (spec-receipt-ocr.md §0). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="app.lunchwidget.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <receiver
             android:name=".SpendWidget"
             android:exported="true">

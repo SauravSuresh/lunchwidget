@@ -58,6 +58,9 @@
     <string name="itemize">ITEMIZE</string>
     <string name="itemize_title">ITEMIZE · BILL %s</string>
     <string name="add_item">+ ADD ITEM</string>
+    <string name="scan_item">◎ SCAN BILL</string>
+    <string name="scan_nothing">NOTHING PARSED — ADD ITEMS BY HAND</string>
+    <string name="scan_no_camera">NO CAMERA APP</string>
     <string name="item_hint">item</string>
     <string name="itemize_done">DONE</string>
     <string name="items_vs_bill">ITEMS %1$s · BILL %2$s</string>

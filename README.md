@@ -80,6 +80,12 @@ to an excluded Reimbursements category in Lunch Money, tagged per person
 Left to right: the split step as it opens, four ways equally, then after
 editing — locked rows hold and the unlocked ones snap to absorb the difference.
 
+Itemized splits can start from a photo: **SCAN BILL** on the itemize screen
+opens the camera, on-device OCR (ML Kit) turns receipt lines into amount+label
+rows, and the photo is deleted the moment recognition finishes — the image is
+never stored, backed up, or uploaded. Tax and summary lines are skipped on
+purpose; the bill ÷ items scaling already accounts for them.
+
 When someone pays you back, flip the quick-add to `+`: pick the person, enter
 what you received, and the amount pours over their pending items oldest-first —
 partial payments just leave the remainder pending. One negative tagged
@@ -116,8 +122,9 @@ Open **Lunch Widget** → paste your Lunch Money API token (lunchmoney.app →
 Developers) → Save → add the widget to your home screen.
 
 No Play Store, no server, no analytics. One API token, stored locally,
-talking straight to `dev.lunchmoney.app`. Zero third-party runtime
-dependencies beyond AndroidX WorkManager.
+talking straight to `dev.lunchmoney.app`. Two runtime dependencies beyond
+AndroidX: WorkManager, and (on this branch) Google's ML Kit for on-device
+receipt OCR — recognition runs entirely on the phone, nothing is uploaded.
 
 ## Settings
 

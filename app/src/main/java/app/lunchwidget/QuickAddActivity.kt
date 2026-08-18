@@ -3,11 +3,14 @@ package app.lunchwidget
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -19,6 +22,11 @@ import android.widget.LinearLayout
 import android.widget.MultiAutoCompleteTextView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.FileProvider
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -531,13 +539,64 @@ class QuickAddActivity : Activity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != 1 || resultCode != RESULT_OK) return
-        val uri = data?.data ?: return
-        contentResolver.query(
-            uri, arrayOf(ContactsContract.Contacts.DISPLAY_NAME), null, null, null
-        )?.use {
-            if (it.moveToFirst()) addFriend(it.getString(0) ?: return)
+        if (resultCode != RESULT_OK) { if (requestCode == 2) scanFile().delete(); return }
+        when (requestCode) {
+            1 -> {
+                val uri = data?.data ?: return
+                contentResolver.query(
+                    uri, arrayOf(ContactsContract.Contacts.DISPLAY_NAME), null, null, null
+                )?.use {
+                    if (it.moveToFirst()) addFriend(it.getString(0) ?: return)
+                }
+            }
+            2 -> recognizeScan()
         }
+    }
+
+    // ------------------------------------------------------------- receipt scan
+
+    private fun scanFile() = File(cacheDir, "scan.jpg")
+
+    private fun launchScan() {
+        val uri = FileProvider.getUriForFile(this, "app.lunchwidget.fileprovider", scanFile())
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            .putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        try {
+            startActivityForResult(intent, 2)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.scan_no_camera, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Photo → text → rows; the capture never outlives the recognizer
+    // (spec-receipt-ocr.md §0: scan-and-discard, nothing retained).
+    private fun recognizeScan() {
+        val file = scanFile()
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        recognizer.process(InputImage.fromFilePath(this, Uri.fromFile(file)))
+            .addOnSuccessListener { text ->
+                val parsed = ReceiptParser.parse(
+                    text.textBlocks.flatMap { it.lines }.map { it.text }
+                )
+                if (parsed.isEmpty()) {
+                    Toast.makeText(this, R.string.scan_nothing, Toast.LENGTH_SHORT).show()
+                } else {
+                    // Untouched placeholder rows make way for the scanned ones.
+                    billItems.removeAll {
+                        it.amount == null && it.label.isBlank() && it.assignees.isEmpty()
+                    }
+                    billItems.addAll(parsed.map { UiItem(it.amount, it.label) })
+                    renderItemize()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, R.string.scan_nothing, Toast.LENGTH_SHORT).show()
+            }
+            .addOnCompleteListener {
+                file.delete()
+                recognizer.close()
+            }
     }
 
     private fun saveSplit() {
@@ -595,6 +654,7 @@ class QuickAddActivity : Activity() {
             billItems.add(UiItem())
             renderItemize()
         }
+        findViewById<TextView>(R.id.scan_item).setOnClickListener { launchScan() }
         findViewById<Button>(R.id.itemize_done).setOnClickListener { applyItemize() }
         renderItemize()
     }
