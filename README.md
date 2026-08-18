@@ -178,8 +178,9 @@ and reinstall, which wipes the token and settings.
 
 Every 4 hours — and instantly after each quick-add or a tap on ↻ — a
 WorkManager job pulls categories, budgets, and the period's transactions,
-recomputes the allowance, caches a snapshot, and redraws the widget. Offline
-it renders the last snapshot with a STALE marker.
+recomputes the allowance, caches a snapshot, and redraws the widget. While the
+sync is in flight the ↻ swaps for a spinner. Offline it renders the last
+snapshot with a STALE marker.
 
 Writes go through WorkManager too. Pressing save shows a one-line receipt with
 **UNDO** for four seconds; nothing has reached Lunch Money yet, so undo simply

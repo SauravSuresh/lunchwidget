@@ -67,6 +67,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("last_error", false)
         set(v) = sp.edit().putBoolean("last_error", v).apply()
 
+    // A refresh is in flight; the widget swaps ↻ for a spinner while true.
+    var refreshing: Boolean
+        get() = sp.getBoolean("refreshing", false)
+        set(v) = sp.edit().putBoolean("refreshing", v).apply()
+
     var snapshot: Snapshot?
         get() {
             val raw = sp.getString("snapshot", null) ?: return null

@@ -29,6 +29,16 @@
             android:text="@string/refresh_glyph"
             android:textColor="#5A5A5A"
             android:textSize="14sp" />
+
+        <ProgressBar
+            android:id="@+id/refresh_spinner"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center_vertical"
+            android:layout_margin="4dp"
+            android:indeterminateTint="#5A5A5A"
+            android:visibility="gone" />
     </LinearLayout>
 
     <ImageView

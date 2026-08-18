@@ -1,8 +1,11 @@
 package app.lunchwidget
 
 import android.content.Context
+import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
@@ -14,7 +17,10 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
 
     override fun doWork(): Result {
         val prefs = Prefs(applicationContext)
-        if (prefs.token.isBlank()) return Result.success()
+        if (prefs.token.isBlank()) {
+            prefs.refreshing = false
+            return Result.success()
+        }
         try {
             val api = LunchMoneyApi(prefs.token)
             val categories = api.categories()
@@ -58,17 +64,31 @@ class RefreshWorker(context: Context, params: WorkerParameters) : Worker(context
             prefs.lastError = false
         } catch (e: Exception) {
             prefs.lastError = true
+            prefs.refreshing = false
             SpendWidget.updateAll(applicationContext)
             return if (runAttemptCount < 2) Result.retry() else Result.failure()
         }
+        prefs.refreshing = false
         SpendWidget.updateAll(applicationContext)
         return Result.success()
     }
 
     companion object {
         fun refreshNow(context: Context) {
+            val prefs = Prefs(context)
+            if (prefs.token.isNotBlank()) {
+                prefs.refreshing = true
+                SpendWidget.updateAll(context)
+            }
+            val req = OneTimeWorkRequestBuilder<RefreshWorker>().apply {
+                // Below S expedited work needs a foreground notification; not worth it.
+                if (Build.VERSION.SDK_INT >= 31) {
+                    setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                }
+            }.build()
+            // Unique + KEEP: impatient taps join the in-flight refresh instead of stacking.
             WorkManager.getInstance(context)
-                .enqueue(OneTimeWorkRequestBuilder<RefreshWorker>().build())
+                .enqueueUniqueWork("refresh-now", ExistingWorkPolicy.KEEP, req)
         }
 
         fun schedulePeriodic(context: Context) {

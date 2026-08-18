@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.view.View
 import android.widget.RemoteViews
 
 class SpendWidget : AppWidgetProvider() {
@@ -88,6 +89,9 @@ class SpendWidget : AppWidgetProvider() {
                 R.id.widget_root,
                 activityIntent(context, QuickAddActivity::class.java, 1)
             )
+            val refreshing = prefs.refreshing
+            views.setViewVisibility(R.id.refresh, if (refreshing) View.GONE else View.VISIBLE)
+            views.setViewVisibility(R.id.refresh_spinner, if (refreshing) View.VISIBLE else View.GONE)
             val refresh = Intent(context, SpendWidget::class.java).setAction(ACTION_REFRESH)
             views.setOnClickPendingIntent(
                 R.id.refresh,
