@@ -83,7 +83,9 @@ editing — locked rows hold and the unlocked ones snap to absorb the difference
 When someone pays you back, flip the quick-add to `+`: pick the person, enter
 what you received, and the amount pours over their pending items oldest-first —
 partial payments just leave the remainder pending. One negative tagged
-transaction posts; the ledger *is* Lunch Money, the widget stores nothing.
+transaction posts; Lunch Money remains the source of truth — the widget keeps
+only an encrypted local cache of the pending ledger for offline/display use,
+rebuilt from Lunch Money on every refresh.
 General income takes the same `+` path into your income categories. Full
 design: [docs/spec-income-split.md](docs/spec-income-split.md).
 
