@@ -4,8 +4,11 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -634,12 +637,31 @@ class QuickAddActivity : Activity() {
         }
         // Recency is a local nicety — record it now, whether or not the post lands.
         owed.forEach { prefs.touchPerson(it.slug, it.display) }
+        copySplitSummary()
         showUndo(getString(R.string.added_amount, money(splitTotal))) {
             PostWorker.enqueue(
                 applicationContext, txns,
                 slugs = owed.map { it.slug },
                 tagOffset = if (myShare > 0) 1 else 0,
             )
+        }
+    }
+
+    // The next stop after saving a split is GPay/Splitwise, where the same
+    // shares get re-entered by hand — so hand them over as one pasteable
+    // clip: note · total, then a name: amount line per person.
+    private fun copySplitSummary() {
+        val text = buildString {
+            append(entryNoteText.ifBlank { getString(R.string.split_receipt) })
+            append(" · ").append(fmtA(splitTotal))
+            if (includeMe) append('\n').append("You: ").append(fmtA(me.amount))
+            for (f in friends) append('\n').append(f.display).append(": ").append(fmtA(f.amount))
+        }
+        getSystemService(ClipboardManager::class.java)
+            .setPrimaryClip(ClipData.newPlainText("split", text))
+        // Android 13+ shows its own "copied" overlay; only speak up below that.
+        if (Build.VERSION.SDK_INT < 33) {
+            Toast.makeText(this, R.string.split_copied, Toast.LENGTH_SHORT).show()
         }
     }
 

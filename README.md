@@ -86,6 +86,11 @@ rows, and the photo is deleted the moment recognition finishes — the image is
 never stored, backed up, or uploaded. Tax and summary lines are skipped on
 purpose; the bill ÷ items scaling already accounts for them.
 
+Saving a split also drops a pasteable summary on the clipboard — the note and
+total, then a `name: amount` line per person — because the next stop is usually
+GPay or Splitwise, where the same shares would otherwise be re-typed from
+memory.
+
 When someone pays you back, flip the quick-add to `+`: pick the person, enter
 what you received, and the amount pours over their pending items oldest-first —
 partial payments just leave the remainder pending. One negative tagged
