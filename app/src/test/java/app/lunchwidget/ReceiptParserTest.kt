@@ -103,4 +103,80 @@ class ReceiptParserTest {
     fun emptyInputParsesToNothing() {
         assertTrue(ReceiptParser.parse(emptyList()).isEmpty())
     }
+
+    // --- regressions from the first real receipt (Chopstix, 2026-08-18) ---
+
+    @Test
+    fun skipsColonKeyValueLines() {
+        // "21:47" became item "21" @ 47; "Dine In: 4" became an item @ 4.
+        val items = ReceiptParser.parse(
+            listOf("21:47", "Dine In: 4", "Kombucha 149.00")
+        )
+        assertEquals(1, items.size)
+        assertEquals("Kombucha", items[0].label)
+    }
+
+    @Test
+    fun stripsQtyAndPriceColumnsFromLabel() {
+        // Receipt rows carry qty and unit-price columns before the amount.
+        val items = ReceiptParser.parse(
+            listOf(
+                "Signature Miso 1 530.00 530.00",
+                "Kombucha 1 149.00 149.00",
+            )
+        )
+        assertEquals(listOf(530.0, 149.0), items.map { it.amount })
+        assertEquals(listOf("Signature Miso", "Kombucha"), items.map { it.label })
+    }
+
+    @Test
+    fun rowsJoinsColumnsByVerticalOverlap() {
+        // ML Kit split the name column and price columns into separate lines;
+        // same receipt row = same vertical band, ordered left to right.
+        val rows = ReceiptParser.rows(
+            listOf(
+                ReceiptParser.OcrLine("Signature Miso", 100, 130, 10),
+                ReceiptParser.OcrLine("Kombucha", 200, 230, 10),
+                ReceiptParser.OcrLine("1 530.00 530.00", 102, 131, 300),
+                ReceiptParser.OcrLine("1 149.00 149.00", 201, 232, 300),
+            )
+        )
+        assertEquals(
+            listOf("Signature Miso 1 530.00 530.00", "Kombucha 1 149.00 149.00"),
+            rows
+        )
+    }
+
+    @Test
+    fun chopstixReceiptEndToEnd() {
+        val rows = ReceiptParser.rows(
+            listOf(
+                ReceiptParser.OcrLine("Date: 14/08/26", 10, 40, 10),
+                ReceiptParser.OcrLine("Dine In: 4", 12, 41, 300),
+                ReceiptParser.OcrLine("21:47", 50, 80, 10),
+                ReceiptParser.OcrLine("Item", 90, 120, 10),
+                ReceiptParser.OcrLine("Qty. Price Amount", 91, 121, 200),
+                ReceiptParser.OcrLine("Signature Miso", 130, 160, 10),
+                ReceiptParser.OcrLine("1 530.00 530.00", 131, 161, 300),
+                ReceiptParser.OcrLine("Ramen Chciken", 165, 195, 10),
+                ReceiptParser.OcrLine("Singapore Prawns", 210, 240, 10),
+                ReceiptParser.OcrLine("1 650.00 650.00", 211, 241, 300),
+                ReceiptParser.OcrLine("Served With 150g", 245, 275, 10),
+                ReceiptParser.OcrLine("Jasmine Rice", 280, 310, 10),
+                ReceiptParser.OcrLine("Kombucha", 320, 350, 10),
+                ReceiptParser.OcrLine("1 149.00 149.00", 321, 351, 300),
+                ReceiptParser.OcrLine("Total Qty: 3", 360, 390, 100),
+                ReceiptParser.OcrLine("Sub Total 1329.00", 361, 391, 300),
+                ReceiptParser.OcrLine("SGST 2.5% 29.50", 400, 430, 200),
+                ReceiptParser.OcrLine("CGST 2.5% 29.50", 435, 465, 200),
+                ReceiptParser.OcrLine("Grand Total ₹1388.00", 470, 500, 100),
+            )
+        )
+        val items = ReceiptParser.parse(rows)
+        assertEquals(listOf(530.0, 650.0, 149.0), items.map { it.amount })
+        assertEquals(
+            listOf("Signature Miso", "Singapore Prawns", "Kombucha"),
+            items.map { it.label }
+        )
+    }
 }

@@ -47,10 +47,16 @@ The existing §12 machinery absorbs OCR imperfection:
     round(ing/off), tip, cash, card, upi, change, due, balance, net, gross,
     amount, tender, paid, invoice, bill no, date, table, qty. Skip lines
     whose amount token is a percentage (`2.5%`).
-  - Input is ML Kit's visual lines flattened to strings. Receipts whose
-    columns OCR into separate blocks lose those rows; the footer surfaces the
-    gap. ponytail: no y-coordinate re-joining in v1 — add if real receipts
-    demand it.
+  - Input is ML Kit's lines re-joined into visual rows first: printed
+    receipts column-ize (name left, qty/price/amount right) and OCR returns
+    the columns as separate lines, so `rows()` groups lines by overlapping
+    vertical band (bounding boxes) and joins left-to-right. Real receipts
+    demanded this on day one (Chopstix, 2026-08-18 — names and prices came
+    back in separate blocks).
+  - A colon right before the amount disqualifies the line (`Dine In: 4`,
+    `21:47`, `Bill No.: …` are key:value pairs, not priced items), and
+    trailing bare-number tokens (qty / unit-price columns) are stripped from
+    the label.
 - **Scan flow** (QuickAddActivity):
   - SCAN writes to `cacheDir/scan.jpg` via FileProvider, launches the camera,
     recognizes with ML Kit Latin, appends parsed rows to `billItems` (the

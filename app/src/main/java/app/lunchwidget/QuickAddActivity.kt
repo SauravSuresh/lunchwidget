@@ -576,9 +576,18 @@ class QuickAddActivity : Activity() {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         recognizer.process(InputImage.fromFilePath(this, Uri.fromFile(file)))
             .addOnSuccessListener { text ->
-                val parsed = ReceiptParser.parse(
-                    text.textBlocks.flatMap { it.lines }.map { it.text }
-                )
+                // Positions matter: printed receipts column-ize and ML Kit
+                // returns the columns as separate lines; rows() re-joins them.
+                val ocrLines = text.textBlocks.flatMap { it.lines }.mapIndexed { i, l ->
+                    val b = l.boundingBox
+                    ReceiptParser.OcrLine(
+                        l.text,
+                        b?.top ?: (i * 1000),
+                        b?.bottom ?: (i * 1000 + 1),
+                        b?.left ?: 0,
+                    )
+                }
+                val parsed = ReceiptParser.parse(ReceiptParser.rows(ocrLines))
                 if (parsed.isEmpty()) {
                     Toast.makeText(this, R.string.scan_nothing, Toast.LENGTH_SHORT).show()
                 } else {
