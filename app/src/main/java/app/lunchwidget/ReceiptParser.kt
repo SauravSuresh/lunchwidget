@@ -15,7 +15,7 @@ object ReceiptParser {
     private val SKIP = Regex(
         "\\b(total|subtotal|sub|gst|cgst|sgst|igst|vat|tax|service|svc|discount|disc|" +
             "round(ing)?|off|tip|cash|card|upi|change|due|balance|net|gross|amount|" +
-            "tender|paid|invoice|bill|date|table|qty)\\b",
+            "tender|paid|invoice|bill|date|table|qty|saved|savings|amt|mrp|cess)\\b",
         RegexOption.IGNORE_CASE
     )
 
@@ -31,26 +31,84 @@ object ReceiptParser {
     // Bare numeric column token (qty or unit price), for label cleanup.
     private val NUM_TOKEN = Regex("\\d+(?:[.,]\\d+)?")
 
-    fun parse(lines: List<String>): List<ParsedItem> = lines.mapNotNull { raw ->
-        val line = raw.trim()
-        if (line.isEmpty() || SKIP.containsMatchIn(line)) return@mapNotNull null
-        if (line.contains('%')) return@mapNotNull null
-        val m = MONEY.find(line) ?: return@mapNotNull null
-        val amount = m.groupValues[1].replace(",", "").toDoubleOrNull() ?: return@mapNotNull null
-        if (amount <= 0.0 || amount >= 100_000.0) return@mapNotNull null
+    // Three consecutive letters = a real word lives on this line.
+    private val WORD = Regex("[A-Za-z]{3,}")
+
+    fun parse(lines: List<String>): List<ParsedItem> {
+        val out = mutableListOf<ParsedItem>()
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i].trim()
+            val next = if (i + 1 < lines.size) lines[i + 1].trim() else null
+            // Supermarket GST layout: item name on one line, a numbers-only
+            // gst%/hsn/mrp/rate/qty/total line beneath it. Pair them and take
+            // the trailing line total — it wins over any number OCR'd onto
+            // the name line (pack sizes like "210ML 15S" read as "158").
+            if (next != null && isNameRow(line)) {
+                val amount = numbersRowAmount(next)
+                if (amount != null) {
+                    out.add(ParsedItem(amount, pairedLabel(line)))
+                    i += 2
+                    continue
+                }
+            }
+            standalone(line)?.let { out.add(it) }
+            i++
+        }
+        return out
+    }
+
+    // Restaurant-style single row: "name … amount" (columns already re-joined).
+    private fun standalone(line: String): ParsedItem? {
+        if (line.isEmpty() || SKIP.containsMatchIn(line)) return null
+        if (line.contains('%')) return null
+        val m = MONEY.find(line) ?: return null
+        val amount = m.groupValues[1].replace(",", "").toDoubleOrNull() ?: return null
+        if (amount <= 0.0 || amount >= 100_000.0) return null
         val prefix = line.substring(0, m.range.first).trimEnd()
         // A colon right before the number is a key:value pair (Dine In: 4,
         // 21:47, Bill No.: …), never a priced item.
-        if (prefix.endsWith(':')) return@mapNotNull null
-        // Drop trailing qty/unit-price columns so "Signature Miso 1 530.00"
-        // labels as "Signature Miso".
-        val words = prefix
+        if (prefix.endsWith(':')) return null
+        val label = cleanLabel(prefix)
+        // Letterless rows are column fragments or tax tables, never items.
+        if (!WORD.containsMatchIn(label)) return null
+        return ParsedItem(amount, label)
+    }
+
+    private fun isNameRow(line: String) =
+        WORD.containsMatchIn(line) && !SKIP.containsMatchIn(line)
+
+    // A numbers-only row's trailing token is the item's line total; null when
+    // the row has real words or too few columns to be one.
+    private fun numbersRowAmount(line: String): Double? {
+        if (WORD.containsMatchIn(line)) return null
+        val tokens = line.split(Regex("\\s+"))
+        if (tokens.count { NUM_TOKEN.matches(it) } < 3) return null
+        val m = MONEY.find(line) ?: return null
+        val amount = m.groupValues[1].replace(",", "").toDoubleOrNull() ?: return null
+        return if (amount > 0.0 && amount < 100_000.0) amount else null
+    }
+
+    // Paired items carry a leading serial number ("3 REBOUND …") — drop it,
+    // then the usual trailing-numeric cleanup.
+    private fun pairedLabel(line: String): String {
+        val words = line.split(Regex("\\s+"))
+        val rest = if (words.size > 1 && Regex("\\d{1,3}").matches(words[0])) {
+            words.drop(1)
+        } else words
+        return cleanLabel(rest.joinToString(" "))
+    }
+
+    // Drop trailing qty/unit-price columns so "Signature Miso 1 530.00"
+    // labels as "Signature Miso".
+    private fun cleanLabel(s: String): String {
+        val words = s
             .trim { it.isWhitespace() || it == '.' || it == '-' || it == '·' || it == ':' }
             .split(Regex("\\s+")).toMutableList()
         while (words.isNotEmpty() && NUM_TOKEN.matches(words.last())) {
             words.removeAt(words.size - 1)
         }
-        ParsedItem(amount, words.joinToString(" ").trim())
+        return words.joinToString(" ").trim()
     }
 
     // One OCR'd line with its position on the photo.

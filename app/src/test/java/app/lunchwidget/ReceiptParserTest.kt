@@ -92,11 +92,18 @@ class ReceiptParserTest {
     }
 
     @Test
-    fun allowsEmptyLabel() {
-        val items = ReceiptParser.parse(listOf("85.00"))
-        assertEquals(1, items.size)
-        assertEquals(85.0, items[0].amount, 0.0)
-        assertEquals("", items[0].label)
+    fun bareNumberRowsAreNoise() {
+        // Field data (supermarket GST rows): letterless rows are column
+        // fragments or tax tables, never items.
+        assertTrue(ReceiptParser.parse(listOf("85.00")).isEmpty())
+        assertTrue(
+            ReceiptParser.parse(
+                listOf(
+                    "18.00 (&) 140.80 25.30 12.66 12.66",
+                    "6.00 (#) 1975.06 98.76 49.40 49.40",
+                )
+            ).isEmpty()
+        )
     }
 
     @Test
@@ -176,6 +183,80 @@ class ReceiptParserTest {
         assertEquals(listOf(530.0, 650.0, 149.0), items.map { it.amount })
         assertEquals(
             listOf("Signature Miso", "Singapore Prawns", "Kombucha"),
+            items.map { it.label }
+        )
+    }
+
+    // --- regressions from the second real receipt (supermarket GST, 2026-08-22):
+    // two-line items — name row, then a gst%/hsn/mrp/rate/qty/total numbers row.
+
+    @Test
+    fun pairsNameRowWithFollowingNumbersRow() {
+        val items = ReceiptParser.parse(
+            listOf(
+                "3 REBOUND DETOX SHOT MANGO 60ML",
+                "5 % 21069099 100.00 97.50 4.000 390.00",
+            )
+        )
+        assertEquals(1, items.size)
+        assertEquals(390.0, items[0].amount, 0.0)
+        assertEquals("REBOUND DETOX SHOT MANGO 60ML", items[0].label)
+    }
+
+    @Test
+    fun pairedAmountBeatsPackSizeOcrdAsNumber() {
+        // "210ML 15S" OCRs as "...158"; the real total is on the numbers row.
+        val items = ReceiptParser.parse(
+            listOf(
+                "7 UAJJAYINI RIPPLE CUP 210ML 158",
+                "18% 48234000 86.00 83.54 1.000 83.54",
+            )
+        )
+        assertEquals(1, items.size)
+        assertEquals(83.54, items[0].amount, 0.0)
+        assertEquals("UAJJAYINI RIPPLE CUP 210ML", items[0].label)
+    }
+
+    @Test
+    fun skipsSavedLine() {
+        assertTrue(ReceiptParser.parse(listOf("You have sAved 79.22")).isEmpty())
+    }
+
+    @Test
+    fun supermarketReceiptEndToEnd() {
+        val items = ReceiptParser.parse(
+            listOf(
+                "GST: 32ADGPG9983P1ZT",
+                "Bill B-26/-107392 Date 22/08/2026 11:42",
+                "Item Description",
+                "Gst% HsnCode MRP Rate Qty Total",
+                "1 CARRY BAGS MED",
+                "18% 63053300 8.00 8.00 1.000 8.00",
+                "2 KC CELLO TAPE CLEAR 12*50MM",
+                "18% 39191000 19.00 18.04 1.000 18.04",
+                "6 REBOUND DETOX SHOT LIME 60ML",
+                "5 % 21069099 100.00 95.36 6.000 572.16",
+                "11 UAJJAYINI RIPPLE CUP 210ML 108",
+                "18% 48234000 58.00 56.34 1.000 56.34",
+                "ItemTotal Amt 2319.00",
+                "You have saved 79.22",
+                "Round off : 0.00",
+                "Grand Total 2239.78",
+                "18.00 (&) 140.80 25.30 12.66 12.66",
+                "6.00 (#) 1975.06 98.76 49.40 49.40",
+                "Tender Cash 2239.78",
+                "No. of items: 11",
+                "TotalPoints : 208.00",
+            )
+        )
+        assertEquals(listOf(8.0, 18.04, 572.16, 56.34), items.map { it.amount })
+        assertEquals(
+            listOf(
+                "CARRY BAGS MED",
+                "KC CELLO TAPE CLEAR 12*50MM",
+                "REBOUND DETOX SHOT LIME 60ML",
+                "UAJJAYINI RIPPLE CUP 210ML",
+            ),
             items.map { it.label }
         )
     }

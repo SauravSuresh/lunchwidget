@@ -57,6 +57,13 @@ The existing §12 machinery absorbs OCR imperfection:
     `21:47`, `Bill No.: …` are key:value pairs, not priced items), and
     trailing bare-number tokens (qty / unit-price columns) are stripped from
     the label.
+  - Two-line supermarket GST items (name row, then a `gst% hsn mrp rate qty
+    total` numbers row — second field test, 2026-08-22) are handled by a
+    pairing pass: a name row followed by a numbers-only row (≥3 numeric
+    tokens, no real words) merges, taking the numbers row's trailing line
+    total. The paired amount wins over any number OCR'd onto the name line
+    (pack sizes like `210ML 15S` read as `158`). Letterless rows alone are
+    never items — they're column fragments or GST summary tables.
 - **Scan flow** (QuickAddActivity):
   - SCAN writes to `cacheDir/scan.jpg` via FileProvider, launches the camera,
     recognizes with ML Kit Latin, appends parsed rows to `billItems` (the
