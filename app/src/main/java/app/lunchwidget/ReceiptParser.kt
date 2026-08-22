@@ -45,10 +45,15 @@ object ReceiptParser {
             // the trailing line total — it wins over any number OCR'd onto
             // the name line (pack sizes like "210ML 15S" read as "158").
             if (next != null && isNameRow(line)) {
-                val amount = numbersRowAmount(next)
+                // A dashed rule between an item and its numbers row (item 11
+                // borders the totals block) OCRs as a digit-less separator —
+                // look one row past it.
+                var j = i + 1
+                if (isSeparator(lines[j].trim()) && j + 1 < lines.size) j++
+                val amount = numbersRowAmount(lines[j].trim())
                 if (amount != null) {
                     out.add(ParsedItem(amount, pairedLabel(line)))
-                    i += 2
+                    i = j + 1
                     continue
                 }
             }
@@ -78,15 +83,33 @@ object ReceiptParser {
     private fun isNameRow(line: String) =
         WORD.containsMatchIn(line) && !SKIP.containsMatchIn(line)
 
+    private fun isSeparator(line: String) =
+        line.isNotEmpty() && !line.any { it.isDigit() } && !WORD.containsMatchIn(line)
+
     // A numbers-only row's trailing token is the item's line total; null when
     // the row has real words or too few columns to be one.
     private fun numbersRowAmount(line: String): Double? {
         if (WORD.containsMatchIn(line)) return null
-        val tokens = line.split(Regex("\\s+"))
-        if (tokens.count { NUM_TOKEN.matches(it) } < 3) return null
+        val nums = line.split(Regex("\\s+")).filter { NUM_TOKEN.matches(it) }
+            .map { it.replace(",", "").toDouble() }
+        if (nums.size < 3) return null
         val m = MONEY.find(line) ?: return null
-        val amount = m.groupValues[1].replace(",", "").toDoubleOrNull() ?: return null
-        return if (amount > 0.0 && amount < 100_000.0) amount else null
+        val total = m.groupValues[1].replace(",", "").toDoubleOrNull() ?: return null
+        if (total <= 0.0 || total >= 100_000.0) return null
+        // Full gst/hsn/mrp/rate/qty/total rows carry their own cross-check:
+        // rate × qty. A single misread digit in the total (572.16 → 672.16)
+        // loses to the product; needing rate AND qty both misread is rarer.
+        if (nums.size >= 5) {
+            val qty = nums[nums.size - 2]
+            val rate = nums[nums.size - 3]
+            val product = SplitMath.round2(rate * qty)
+            if (qty <= 100 && product > 0.0 && product < 100_000.0 &&
+                Math.abs(product - total) > 0.05
+            ) {
+                return product
+            }
+        }
+        return total
     }
 
     // Paired items carry a leading serial number ("3 REBOUND …") — drop it,

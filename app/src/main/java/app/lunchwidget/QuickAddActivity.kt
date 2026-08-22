@@ -590,7 +590,11 @@ class QuickAddActivity : Activity() {
                         b?.left ?: 0,
                     )
                 }
-                val parsed = ReceiptParser.parse(ReceiptParser.rows(ocrLines))
+                val rows = ReceiptParser.rows(ocrLines)
+                // Raw rows to logcat so a bad parse can be diagnosed from
+                // evidence (adb logcat -s ReceiptOCR) instead of guessed at.
+                android.util.Log.d("ReceiptOCR", rows.joinToString("\n"))
+                val parsed = ReceiptParser.parse(rows)
                 if (parsed.isEmpty()) {
                     Toast.makeText(this, R.string.scan_nothing, Toast.LENGTH_SHORT).show()
                 } else {

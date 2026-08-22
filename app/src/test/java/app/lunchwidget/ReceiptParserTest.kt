@@ -223,6 +223,45 @@ class ReceiptParserTest {
     }
 
     @Test
+    fun rateTimesQtyCorrectsMisreadTotal() {
+        // Third field test: OCR read 572.16 as 672.16; rate × qty knows better.
+        val items = ReceiptParser.parse(
+            listOf(
+                "6 REBOUND DETOX SHOT LIME 60ML",
+                "5 % 21069099 100.00 95.36 6.000 672.16",
+            )
+        )
+        assertEquals(1, items.size)
+        assertEquals(572.16, items[0].amount, 0.001)
+    }
+
+    @Test
+    fun consistentTotalIsKeptAsIs() {
+        val items = ReceiptParser.parse(
+            listOf(
+                "3 REBOUND DETOX SHOT MANGO 60ML",
+                "5 % 21069099 100.00 97.50 4.000 390.00",
+            )
+        )
+        assertEquals(390.0, items[0].amount, 0.001)
+    }
+
+    @Test
+    fun pairsAcrossSeparatorRow() {
+        // Item 11 borders the totals block; a dashed rule OCRs in between.
+        val items = ReceiptParser.parse(
+            listOf(
+                "11 UAJJAYINI RIPPLE CUP 210ML 108",
+                "------------------------",
+                "18% 48234000 58.00 56.34 1.000 56.34",
+            )
+        )
+        assertEquals(1, items.size)
+        assertEquals(56.34, items[0].amount, 0.001)
+        assertEquals("UAJJAYINI RIPPLE CUP 210ML", items[0].label)
+    }
+
+    @Test
     fun supermarketReceiptEndToEnd() {
         val items = ReceiptParser.parse(
             listOf(
